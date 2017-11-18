@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 import hashlib
 import re
-from decimal import Decimal
 
 
 hash_sha224_tmpl = re.compile(r"\b([a-f\d]{56}|[A-F\d]{56})\b")

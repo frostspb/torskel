@@ -9,61 +9,141 @@ try:
     import aioredis
 except ImportError:
     aioredis = None
-    pass
 
 try:
     import aioodbc
 except ImportError:
     aioodbc = None
-    pass
-
 
 from tornado.options import options
 from urllib.parse import urlencode
 from tornado.httpclient import AsyncHTTPClient
-from torskel.str_utils import to_dict
-
-
+from tornado.autoreload import watch
+from jinja2 import Environment, FileSystemLoader
 LOG_MSG_DEBUG_TMPL = '%s %s'
 
 settings = {
-    'cookie_secret': options.secret_key,
-    'xsrf_cookies': True,
+    # 'cookie_secret': options.secret_key,
+    # 'xsrf_cookies': True,
 }
+
+options.define('debug', default=True, help='debug mode', type=bool)
+options.define("port", default=8888, help="run on the given port", type=int)
+
+# mail logger params
+options.define('use_mail_logging', default=False, help='SMTP log handler', type=bool)
+options.define("log_mail_subj", default='', type=str)
+options.define("log_mail_from", default='', type=str)
+options.define("log_mail_to", default=[], type=list)
+options.define("log_mail_host", default='', type=str)
+
+# redis params
+options.define('use_redis', default=False, help='use redis', type=bool)
+options.define('use_redis_socket', default=True, help='connection to redis unixsocket file', type=bool)
+options.define("redis_min_con", default=5, type=int)
+options.define("redis_max_con", default=10, type=int)
+options.define("redis_host", default='localhost', type=str)
+options.define("redis_port", default=6379, type=int)
+options.define("redis_socket", default='/var/run/redis/redis.sock', type=str)
+options.define("redis_psw", default='', type=str)
+options.define("redis_db", default=-1, type=int)
+
+# reactjs params
+options.define('use_reactjs', default=False, help='use reactjs', type=bool)
+options.define("react_assets_file", default='webpack-assets.json', type=str)
 
 
 class TorskelServer(tornado.web.Application):
-    def __init__(self, handlers, root_dir, redis_psw=None, use_redis_socket=False,**settings):
-        super().__init__(handlers, static_path=os.path.join(root_dir, "static"),
-                         template_path=os.path.join(root_dir, "templates"),
-                         **settings)
+    def __init__(self, handlers, root_dir=None, static_path=None, template_path=None,
+                 create_http_client=True, **settings):
 
-        self.redis_psw = redis_psw
-        self.use_redis_socket = use_redis_socket
+        # TODO add valiate paths
+
+        app__static_dir = os.path.join(root_dir, "static") if static_path is None else static_path
+
+        app_template_dir = os.path.join(root_dir, "templates") if template_path is None else template_path
+
+        super().__init__(handlers, static_path=app__static_dir,
+                         template_path=app_template_dir,
+                         **settings)
+        self.redis_connection_pool = None
         self.logger = tornado.log.gen_log
         tornado.ioloop.IOLoop.configure('tornado.platform.asyncio.AsyncIOMainLoop')
-        mail_logging = logging.handlers.SMTPHandler(mailhost=options.log_mail_host,
-                                                    fromaddr=options.log_mail_from,
-                                                    toaddrs=options.log_mail_to,
-                                                    subject=options.log_mail_subj
-                                                    )
 
-        mail_logging.setLevel(logging.ERROR)
-        self.logger.addHandler(mail_logging)
-        self.http_client = AsyncHTTPClient()
+        if options.use_reactjs:
+            self.react_env = Environment(loader=FileSystemLoader('templates'))
+            self.react_assets = self.load_react_assets()
+            print(self.react_assets)
+        else:
+            self.react_env = self.react_assets = None
+
+        self.http_client = AsyncHTTPClient() if create_http_client else None
+
+    # ########################### #
+    #  Validate params functions  #
+    # ########################### #
+    @staticmethod
+    def validate_options():
+        return True
+
+    @staticmethod
+    def validate_path():
+        return True
+
+    @staticmethod
+    def validate_mail_params():
+        return True
+
+    # ######################## #
+    #  ReactJS render support  #
+    # ######################## #
+
+    @staticmethod
+    def load_react_assets():
+        try:
+            fn = options.react_assets_file
+            with open(fn) as f:
+                watch(fn)
+                assets = json.load(f)
+        except IOError:
+            assets = None
+        except KeyError:
+            assets = None
+        return assets
 
     def init_with_loop(self, loop):
-        if self.use_redis_socket:
-            self.redis_cnt_pool = loop.run_until_complete(aioredis.create_pool(
-                '/var/run/redis/redis.sock', password=self.redis_psw,
-                minsize=options.redis_min_con, maxsize=options.redis_max_con,
-                loop=loop))
 
-        else:
-            self.redis_cnt_pool = loop.run_until_complete(aioredis.create_pool(
-                ('localhost', 6379), password=self.redis_psw,
-                minsize=options.redis_min_con, maxsize=options.redis_max_con,
-                loop=loop))
+        redis_addr = options.redis_socket if options.use_redis_socket else (options.redis_host, options.redis_port)
+        # TODO validate redis connection params
+        redis_psw = options.redis_psw
+
+        if redis_psw == "":
+            redis_psw = None
+
+        redis_db = options.redis_db
+        if redis_db == -1:
+            redis_db = None
+
+        self.redis_connection_pool = loop.run_until_complete(aioredis.create_pool(
+            redis_addr, password=redis_psw, db=redis_db,
+            minsize=options.redis_min_con, maxsize=options.redis_max_con,
+            loop=loop))
+
+    # ################### #
+    #  Logging functions  #
+    # ################### #
+
+    def set_mail_logging(self, mail_host, from_addr, to_addr, subject, credentials_list=None, log_level=logging.ERROR):
+        # TODO validate mail params try catch
+        mail_logging = logging.handlers.SMTPHandler(mailhost=mail_host,
+                                                    fromaddr=from_addr,
+                                                    toaddrs=to_addr,
+                                                    subject=subject,
+                                                    credentials=credentials_list
+                                                    )
+
+        mail_logging.setLevel(log_level)
+        self.logger.addHandler(mail_logging)
 
     def get_log_msg(self, msg, grep_label=''):
         """
@@ -105,23 +185,9 @@ class TorskelServer(tornado.web.Application):
         """
         self.logger.exception(self.get_log_msg(msg, grep_label))
 
-    async def http_request_get(self, url):
-        """
-        Делает http запрос, ответ либо json либо xml
-        :param url: урл
-        :param type_resp: тип ответа
-        :return: словарь
-        """
-        try:
-            res = await self.http_client.fetch(url)
-            res_s = res.body.decode(encoding="utf-8")
-            res_json = json.loads(res_s)
-            res_wc = res_json
-        except Exception:
-            self.log_exc('get_open_url failed! url = %s' % url)
-            res_wc = None
-        return res_wc
-
+    # ############################# #
+    #  Async Http-client functions  #
+    # ############################# #
     async def http_request_post(self, url, body):
         """
         Делает http post запрос
@@ -139,20 +205,40 @@ class TorskelServer(tornado.web.Application):
             res_json = json.loads(res_s)
         except Exception:
             res_json = None
-            self.log_exc('post_open_url failed! url = %s  body=%s ' % (url, body))
+            self.log_exc('http_request_post failed! url = %s  body=%s ' % (url, body))
 
         return res_json
 
+    async def http_request_get(self, url):
+        """
+        Делает http запрос, ответ либо json либо xml
+        :param url: урл
+        :param type_resp: тип ответа
+        :return: словарь
+        """
+        try:
+            res_fetch = await self.http_client.fetch(url)
+            res_s = res_fetch.body.decode(encoding="utf-8")
+            res_json = json.loads(res_s)
+            res = res_json
+        except Exception:
+            self.log_exc('http_request_get failed! url = %s' % url)
+            res = None
+        return res
+
+    # ######################## #
+    #  Redis client functions  #
+    # ######################## #
     async def set_redis_exp_val(self, key, val, exp, conver_to_json=False):
         if conver_to_json:
             val = json.dumps(val)
 
-        with await self.redis_cnt_pool as redis:
+        with await self.redis_connection_pool as redis:
             await redis.connection.execute('set', key, val)
             await redis.connection.execute('expire', key, exp)
 
     async def del_redis_val(self, key):
-        with await self.redis_cnt_pool as redis:
+        with await self.redis_connection_pool as redis:
             await redis.connection.execute('del', key)
 
     async def get_redis_val(self, key, from_json=True):
@@ -160,7 +246,7 @@ class TorskelServer(tornado.web.Application):
             Достать инфу из редиса
         """
         try:
-            with await self.redis_cnt_pool as redis:
+            with await self.redis_connection_pool as redis:
                 r = await redis.connection.execute('get', key)
                 redis_val = r.decode('utf-8')
                 if redis_val:
@@ -172,10 +258,3 @@ class TorskelServer(tornado.web.Application):
             self.log_exc('get_redis_val failed key = %s' % key)
             res = None
             return res
-
-
-
-
-
-
-

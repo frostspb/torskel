@@ -17,6 +17,13 @@ class TorskelHandler(tornado.web.RequestHandler):
         # ф-я фильтрации словарей по списку ключей
         self.filter_dict = lambda x, y: dict([(i, x[i]) for i in x if i in set(y)])
 
+    def react_render(self, template_name, render_data_dict=None):
+        if render_data_dict is None:
+            render_data_dict = {}
+        template = self.application.react_env.get_template(template_name)
+        render_data_dict.update({'assets': self.application.react_assets})
+        return self.write(template.render(render_data_dict))
+
     @staticmethod
     def get_hash_str(value, alg='sha224'):
         """
