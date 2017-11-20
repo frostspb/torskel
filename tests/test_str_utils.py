@@ -28,11 +28,11 @@ class TestStrUtils(unittest.TestCase):
 
 	def test_is_hash_str(self):
 		res = is_hash_str(self.test_hash)
-		assert res, True
+		self.assertEqual(res, True)
 
 	def test_is_hash_str_wrong_val(self):
 		res = is_hash_str(23423)
-		assert res is False
+		self.assertEqual(res, False)
 
 
 if __name__ == '__main__':

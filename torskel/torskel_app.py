@@ -15,11 +15,17 @@ try:
 except ImportError:
     aioodbc = None
 
+try:
+    from jinja2 import Environment, FileSystemLoader
+except ImportError:
+    jinja2 = None
+
+
 from tornado.options import options
 from urllib.parse import urlencode
 from tornado.httpclient import AsyncHTTPClient
 from tornado.autoreload import watch
-from jinja2 import Environment, FileSystemLoader
+
 LOG_MSG_DEBUG_TMPL = '%s %s'
 
 settings = {
@@ -71,9 +77,13 @@ class TorskelServer(tornado.web.Application):
         tornado.ioloop.IOLoop.configure('tornado.platform.asyncio.AsyncIOMainLoop')
 
         if options.use_reactjs:
-            self.react_env = Environment(loader=FileSystemLoader('templates'))
-            self.react_assets = self.load_react_assets()
-            print(self.react_assets)
+            if jinja2 is None:
+                self.react_env = self.react_assets = None
+                raise ImportError('Required package jinja2 is missing')
+            else:
+                self.react_env = Environment(loader=FileSystemLoader('templates'))
+                self.react_assets = self.load_react_assets()
+
         else:
             self.react_env = self.react_assets = None
 
@@ -111,23 +121,17 @@ class TorskelServer(tornado.web.Application):
             assets = None
         return assets
 
+    # ################# #
+    #  Init with loop   #
+    # ################# #
+
     def init_with_loop(self, loop):
-
-        redis_addr = options.redis_socket if options.use_redis_socket else (options.redis_host, options.redis_port)
-        # TODO validate redis connection params
-        redis_psw = options.redis_psw
-
-        if redis_psw == "":
-            redis_psw = None
-
-        redis_db = options.redis_db
-        if redis_db == -1:
-            redis_db = None
-
-        self.redis_connection_pool = loop.run_until_complete(aioredis.create_pool(
-            redis_addr, password=redis_psw, db=redis_db,
-            minsize=options.redis_min_con, maxsize=options.redis_max_con,
-            loop=loop))
+        if options.use_redis:
+            # check aioredis lib
+            if aioredis is None:
+                raise ImportError('Required package aioredis is missing')
+            else:
+                self.init_redis_pool(loop)
 
     # ################### #
     #  Logging functions  #
@@ -229,6 +233,25 @@ class TorskelServer(tornado.web.Application):
     # ######################## #
     #  Redis client functions  #
     # ######################## #
+
+    def init_redis_pool(self, loop):
+        redis_addr = options.redis_socket if options.use_redis_socket else (options.redis_host, options.redis_port)
+        # TODO validate redis connection params
+        redis_psw = options.redis_psw
+
+        if redis_psw == "":
+            redis_psw = None
+
+        redis_db = options.redis_db
+        if redis_db == -1:
+            redis_db = None
+
+        self.redis_connection_pool = loop.run_until_complete(aioredis.create_pool(
+            redis_addr, password=redis_psw, db=redis_db,
+            minsize=options.redis_min_con, maxsize=options.redis_max_con,
+            loop=loop))
+
+
     async def set_redis_exp_val(self, key, val, exp, conver_to_json=False):
         if conver_to_json:
             val = json.dumps(val)

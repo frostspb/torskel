@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import hashlib
 import re
-
+import pickle
 
 hash_sha224_tmpl = re.compile(r"\b([a-f\d]{56}|[A-F\d]{56})\b")
 all_hash_tmpl = re.compile(r"^(?:[a-fA-F\d]{32,40})$|^(?:[a-fA-F\d]{52,60})$|^(?:[a-fA-F\d]{92,100})$")
@@ -61,3 +61,33 @@ def is_hash_str(value):
     return res
 
 
+def pack_iters(val):
+    """
+    Упаковывает итерируемый тип в строку
+    :param val:
+    :return: str
+    """
+
+    try:
+        if isinstance(val, (dict, list, tuple, enumerate)):
+            res = pickle.dumps(val)
+        else:
+            res = val
+    except pickle.PicklingError:
+        res = None
+
+    return res
+
+
+def unpack_iters(val):
+    """
+    Распаковывает строку в итерируемый тип
+    :param val:
+    :return: итерируемый тип
+    """
+
+    try:
+        res = pickle.loads(val)
+    except pickle.UnpicklingError:
+        res = None
+    return res
