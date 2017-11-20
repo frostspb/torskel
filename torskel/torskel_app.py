@@ -64,12 +64,14 @@ class TorskelServer(tornado.web.Application):
                  create_http_client=True, **settings):
 
         # TODO add valiate paths
+        if root_dir is not None:
+            app_static_dir = os.path.join(root_dir, "static") if static_path is None else static_path
 
-        app__static_dir = os.path.join(root_dir, "static") if static_path is None else static_path
+            app_template_dir = os.path.join(root_dir, "templates") if template_path is None else template_path
+        else:
+            app_template_dir = app_static_dir = None
 
-        app_template_dir = os.path.join(root_dir, "templates") if template_path is None else template_path
-
-        super().__init__(handlers, static_path=app__static_dir,
+        super().__init__(handlers, static_path=app_static_dir,
                          template_path=app_template_dir,
                          **settings)
         self.redis_connection_pool = None
