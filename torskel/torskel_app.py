@@ -238,7 +238,7 @@ class TorskelServer(tornado.web.Application):
 
         return res_json
 
-    async def http_request_get(self, url):
+    async def http_request_get(self, url, to_json=False):
         """
         http request. Method GET
         :param url: url
@@ -247,8 +247,11 @@ class TorskelServer(tornado.web.Application):
         try:
             res_fetch = await self.http_client.fetch(url)
             res_s = res_fetch.body.decode(encoding="utf-8")
-            res_json = json.loads(res_s)
-            res = res_json
+            if to_json:
+                res_json = json.loads(res_s)
+                res = res_json
+            else:
+                res = res_s
         except Exception:
             self.log_exc('http_request_get failed! url = %s' % url)
             res = None
