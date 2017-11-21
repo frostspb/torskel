@@ -263,7 +263,7 @@ class TorskelServer(tornado.web.Application):
         redis_db = options.redis_db
         if redis_db == -1:
             redis_db = None
-        print(redis_addr, redis_psw, redis_db, options.redis_min_con)
+
         self.redis_connection_pool = loop.run_until_complete(aioredis.create_pool(
             redis_addr, password=redis_psw, db=redis_db,
             minsize=options.redis_min_con, maxsize=options.redis_max_con,
