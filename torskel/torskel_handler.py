@@ -14,7 +14,7 @@ from torskel.str_utils import is_hash_str
 class TorskelHandler(tornado.web.RequestHandler):
     def __init__(self, application, request, **kwargs):
         super(TorskelHandler, self).__init__(application, request, **kwargs)
-        # ф-я фильтрации словарей по списку ключей
+        # filter dict by list of keys
         self.filter_dict = lambda x, y: dict([(i, x[i]) for i in x if i in set(y)])
 
     def react_render(self, template_name, render_data_dict=None):
@@ -27,27 +27,27 @@ class TorskelHandler(tornado.web.RequestHandler):
     @staticmethod
     def get_hash_str(value, alg='sha224'):
         """
-        Возвращает хэш из строки
-        :param value: строка
-        :param alg: алгоритм. по умолчанию 224
-        :return: хэш
+        Return hash by string
+        :param value: source string
+        :param alg: algorithm, default sha224
+        :return: hash
         """
         return get_hash_str(value, alg)
 
     @staticmethod
     def is_hash_str(value):
         """
-        Проверяет является ли ф-я хэш строкой любого алгоритма
-        :param value:
+        Checks whether the hash string is a string of any algorithm
+        :param value: hash string
         :return: boolean
         """
         return is_hash_str(value)
 
     def get_req_args(self, args_list=None):
         """
-        Забирает из реквеста список параметров
-        :param args_list: список параметров
-        :return: список значений параметров
+        Get list of params from request
+        :param args_list: list of params
+        :return: list of values
         """
         if not args_list:
             args_list = []
@@ -55,7 +55,7 @@ class TorskelHandler(tornado.web.RequestHandler):
 
     def get_req_args_dict(self):
         """
-        Возврщает словарь из всех параметров запроса
+        Return dict of request arguments
         :return: dict
         """
 
@@ -66,100 +66,92 @@ class TorskelHandler(tornado.web.RequestHandler):
             res = {}
         return res
 
+    def get_user_ip(self):
+        """
+        Return user ip from request object
+        :return: user_ip
+        """
+        x_real_ip = self.request.headers.get("X-Real-IP")
+        remote_ip = x_real_ip or self.request.remote_ip
+        return remote_ip
+
     def _handle_request_exception(self, e):
         super(TorskelHandler, self)._handle_request_exception(e)
         msg = '''handler classname = %s \n
 			   request = %s \n
-		       exception = %s\n'''
+		       exception = %s \n'''
 
         self.log_exc(msg % (type(self).__name__, self.request, e))
 
     def log_debug(self, msg, grep_label=''):
         """
-        Дебаг лог
-        :param msg: сообщение
-        :param grep_label: метка для грепанья
+        Log debug message
+        :param msg: message
+        :param grep_label: label for grep
         :return:
         """
         self.application.log_debug(msg, grep_label=grep_label)
 
     def log_err(self, msg, grep_label=''):
         """
-        Логирует ошибку
-        :param msg: сообщение
-        :param grep_label: метка для грепанья
+        Log error
+        :param msg: message
+        :param grep_label: label for grep
         :return:
         """
         self.application.log_err(msg, grep_label=grep_label)
 
     def log_exc(self, msg, grep_label=''):
         """
-        Логирует исключение
-        :param msg: сообщение
-        :param grep_label: метка для грепанья
+        Log exception
+        :param msg: message
+        :param grep_label: label for grep
         :return:
         """
         self.application.log_exc(msg, grep_label)
 
     async def http_request_get(self, url):
         """
-        Делает http запрос, ответ либо json либо xml
-        :param url: урл
-        :param type_resp: тип ответа
-        :return: словарь
+        async http request. Method GET
+        :param url: url
+        :return: response
         """
 
         return await self.application.http_request_get(url)
 
     async def http_request_post(self, url, body):
         """
-        Делает http post запрос
-        :param url: урл
-        :param body: словарь с пост-параметрами
-        :return: словарь
+        async http request. Method POST
+        :param url: url
+        :param body: dict with POST-params
+        :return: response
         """
         return await self.application.http_request_post(url, body)
 
-    async def set_redis_exp_val(self, key, val, exp, conver_to_json=False):
-        if conver_to_json:
-            if json_util:
-                val = json.dumps(val, default=json_util.default)
-            else:
-                val = json.dumps(val)
-
-        with await self.application.redis_cnt_pool as redis:
-            await redis.connection.execute('set', key, val)
-            await redis.connection.execute('expire', key, exp)
-
-        return True
+    async def set_redis_exp_val(self, key, val, exp, convert_to_json=False):
+        """
+        Write value to redis
+        :param key: key
+        :param val: value
+        :param exp: Expire time in seconds
+        :param convert_to_json: bool
+        """
+        await self.application.set_redis_exp_val(key, val, exp, convert_to_json)
 
     async def del_redis_val(self, key):
-
-        with await self.application.redis_cnt_pool as redis:
-            await redis.connection.execute('del', key)
-
-        return True
-
-    async def get_redis_val(self, key, from_json=True, mail_label=''):
         """
-            Достать инфу из редиса
+        delete value from redis by key
+        :param key: key
+
         """
-        try:
+        await self.application.del_redis_val(key)
 
-            with await self.application.redis_cnt_pool as redis:
-                r = await redis.connection.execute('get', key)
-                redis_val = r.decode('utf-8') if r is not None else r
-                if redis_val:
-                    if json_util:
-                        res = json.loads(redis_val, object_hook=json_util.object_hook) if from_json else redis_val
-                    else:
-                        res = json.loads(redis_val) if from_json else redis_val
-                else:
-
-                    res = None
-
-                return res
-        except:
-            self.log_exc('get_redis_val failed key = %s label=%s' % (key, mail_label))
-            res = None
-            return res
+    async def get_redis_val(self, key, from_json=True):
+        """
+        get value from redis by key
+        :param key: key
+        :param from_json: loads from json
+        :return: value
+        """
+        res = await self.application.get_redis_val(key, from_json)
+        return res

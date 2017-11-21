@@ -17,8 +17,9 @@ except ImportError:
 
 try:
     from jinja2 import Environment, FileSystemLoader
+    jinja2_import = True
 except ImportError:
-    jinja2 = None
+    jinja2_import = False
 
 
 from tornado.options import options
@@ -48,7 +49,7 @@ options.define('use_redis', default=False, help='use redis', type=bool)
 options.define('use_redis_socket', default=True, help='connection to redis unixsocket file', type=bool)
 options.define("redis_min_con", default=5, type=int)
 options.define("redis_max_con", default=10, type=int)
-options.define("redis_host", default='localhost', type=str)
+options.define("redis_host", default='127.0.0.1', type=str)
 options.define("redis_port", default=6379, type=int)
 options.define("redis_socket", default='/var/run/redis/redis.sock', type=str)
 options.define("redis_psw", default='', type=str)
@@ -74,12 +75,12 @@ class TorskelServer(tornado.web.Application):
         super().__init__(handlers, static_path=app_static_dir,
                          template_path=app_template_dir,
                          **settings)
-        self.redis_connection_pool = None
+        #self.redis_connection_pool = None
         self.logger = tornado.log.gen_log
         tornado.ioloop.IOLoop.configure('tornado.platform.asyncio.AsyncIOMainLoop')
 
         if options.use_reactjs:
-            if jinja2 is None:
+            if not jinja2_import:
                 self.react_env = self.react_assets = None
                 raise ImportError('Required package jinja2 is missing')
             else:
@@ -140,6 +141,16 @@ class TorskelServer(tornado.web.Application):
     # ################### #
 
     def set_mail_logging(self, mail_host, from_addr, to_addr, subject, credentials_list=None, log_level=logging.ERROR):
+        """
+        Init SMTP log handler for sendig log to email
+        :param mail_host: host
+        :param from_addr: from
+        :param to_addr: to
+        :param subject: subject
+        :param credentials_list: (login, password)
+        :param log_level: log level
+        :return:
+        """
         # TODO validate mail params try catch
         mail_logging = logging.handlers.SMTPHandler(mailhost=mail_host,
                                                     fromaddr=from_addr,
@@ -151,12 +162,13 @@ class TorskelServer(tornado.web.Application):
         mail_logging.setLevel(log_level)
         self.logger.addHandler(mail_logging)
 
-    def get_log_msg(self, msg, grep_label=''):
+    @staticmethod
+    def get_log_msg(msg, grep_label=''):
         """
-        Собирает соощение по шаблону
-        :param msg: сообщение
-        :param grep_label: метка для грепанья
-        :return: итоговое сообщение
+        Make message by template
+        :param msg: message
+        :param grep_label: label for grep
+        :return: compiled message
         """
         try:
             res = LOG_MSG_DEBUG_TMPL % (grep_label, msg)
@@ -166,27 +178,27 @@ class TorskelServer(tornado.web.Application):
 
     def log_debug(self, msg, grep_label=''):
         """
-        Дебаг лог
-        :param msg: сообщение
-        :param grep_label: метка для грепанья
+        Log debug message
+        :param msg: message
+        :param grep_label: label for grep
         :return:
         """
         self.logger.debug(self.get_log_msg(msg, grep_label))
 
     def log_err(self, msg, grep_label=''):
         """
-        Логирует ошибку
-        :param msg: сообщение
-        :param grep_label: метка для грепанья
+        Log error
+        :param msg: message
+        :param grep_label: label for grep
         :return:
         """
         self.logger.error(self.get_log_msg(msg, grep_label))
 
     def log_exc(self, msg, grep_label=''):
         """
-        Логирует исключение
-        :param msg: сообщение
-        :param grep_label: метка для грепанья
+        Log exception
+        :param msg: message
+        :param grep_label: label for grep
         :return:
         """
         self.logger.exception(self.get_log_msg(msg, grep_label))
@@ -196,10 +208,10 @@ class TorskelServer(tornado.web.Application):
     # ############################# #
     async def http_request_post(self, url, body):
         """
-        Делает http post запрос
-        :param url: урл
-        :param body: словарь с пост-параметрами
-        :return: словарь
+        http request. Method POST
+        :param url: url
+        :param body: dict with POST-params
+        :return: response
         """
         try:
             headers = None
@@ -217,10 +229,9 @@ class TorskelServer(tornado.web.Application):
 
     async def http_request_get(self, url):
         """
-        Делает http запрос, ответ либо json либо xml
-        :param url: урл
-        :param type_resp: тип ответа
-        :return: словарь
+        http request. Method GET
+        :param url: url
+        :return: response
         """
         try:
             res_fetch = await self.http_client.fetch(url)
@@ -237,6 +248,11 @@ class TorskelServer(tornado.web.Application):
     # ######################## #
 
     def init_redis_pool(self, loop):
+        """
+        Init redis connection pool
+        :param loop: ioloop
+
+        """
         redis_addr = options.redis_socket if options.use_redis_socket else (options.redis_host, options.redis_port)
         # TODO validate redis connection params
         redis_psw = options.redis_psw
@@ -247,32 +263,47 @@ class TorskelServer(tornado.web.Application):
         redis_db = options.redis_db
         if redis_db == -1:
             redis_db = None
-
+        print(redis_addr, redis_psw, redis_db, options.redis_min_con)
         self.redis_connection_pool = loop.run_until_complete(aioredis.create_pool(
             redis_addr, password=redis_psw, db=redis_db,
             minsize=options.redis_min_con, maxsize=options.redis_max_con,
             loop=loop))
 
+    async def set_redis_exp_val(self, key, val, exp, convert_to_json=False):
+        """
+        Write value to redis
+        :param key: key
+        :param val: value
+        :param exp: Expire time in seconds
+        :param convert_to_json: bool
 
-    async def set_redis_exp_val(self, key, val, exp, conver_to_json=False):
-        if conver_to_json:
+        """
+        if convert_to_json:
             val = json.dumps(val)
 
         with await self.redis_connection_pool as redis:
-            await redis.connection.execute('set', key, val)
-            await redis.connection.execute('expire', key, exp)
+            await redis.execute('set', key, val)
+            await redis.execute('expire', key, exp)
 
     async def del_redis_val(self, key):
+        """
+        delete value from redis by key
+        :param key: key
+
+        """
         with await self.redis_connection_pool as redis:
-            await redis.connection.execute('del', key)
+            await redis.execute('del', key)
 
     async def get_redis_val(self, key, from_json=True):
         """
-            Достать инфу из редиса
+        get value from redis by key
+        :param key: key
+        :param from_json: loads from json
+        :return: value
         """
         try:
             with await self.redis_connection_pool as redis:
-                r = await redis.connection.execute('get', key)
+                r = await redis.execute('get', key)
                 redis_val = r.decode('utf-8')
                 if redis_val:
                     res = json.loads(redis_val) if from_json else redis_val
