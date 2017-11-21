@@ -43,6 +43,8 @@ options.define("log_mail_subj", default='', type=str)
 options.define("log_mail_from", default='', type=str)
 options.define("log_mail_to", default=[], type=list)
 options.define("log_mail_host", default='', type=str)
+options.define("log_mail_user", default='', type=str)
+options.define("log_mail_psw", default='', type=str)
 
 # redis params
 options.define('use_redis', default=False, help='use redis', type=bool)
@@ -78,6 +80,15 @@ class TorskelServer(tornado.web.Application):
         #self.redis_connection_pool = None
         self.logger = tornado.log.gen_log
         tornado.ioloop.IOLoop.configure('tornado.platform.asyncio.AsyncIOMainLoop')
+
+        if options.use_mail_logging:
+            if options.log_mail_user == '' and options.log_mail_psw == '':
+                credentials_list = None
+            else:
+                credentials_list = [options.log_mail_user, options.log_mail_psw]
+
+            self.set_mail_logging(options.log_mail_host, options.log_mail_from, options.log_mail_to,
+                                  options.log_mail_subj, credentials_list)
 
         if options.use_reactjs:
             if not jinja2_import:
