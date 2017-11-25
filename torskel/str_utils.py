@@ -9,9 +9,9 @@ all_hash_tmpl = re.compile(r"^(?:[a-fA-F\d]{32,40})$|^(?:[a-fA-F\d]{52,60})$|^(?
 
 def valid_conversion(val, type_to_convert):
     """
-    Проверяе можно ли конверить val в указанный тип
-    :param val: значение
-    :param type_to_convert: тип
+    Checking whether it is possible to convert val to the specified type
+    :param val: value
+    :param type_to_convert: type
     :return: boolean
     """
 
@@ -29,10 +29,10 @@ def valid_conversion(val, type_to_convert):
 
 def get_hash_str(value, alg='sha224'):
     """
-    Возвращает хэш из строки
-    :param value: строка
-    :param alg: алгоритм. по умолчанию 224
-    :return: хэш
+    Return hash from string
+    :param value: string
+    :param alg: algorithm, default sha224
+    :return: hash
     """
     res = None
 
@@ -47,7 +47,7 @@ def get_hash_str(value, alg='sha224'):
 
 def is_hash_str(value):
     """
-    Проверяет является ли ф-я хэш строкой любого алгоритма
+    Checks whether the string is a hash of any algorithm
     :param value:
     :return: boolean
     """
@@ -63,7 +63,7 @@ def is_hash_str(value):
 
 def pack_iters(val):
     """
-    Упаковывает итерируемый тип в строку
+    Packs the iterated type into a string
     :param val:
     :return: str
     """
@@ -81,9 +81,9 @@ def pack_iters(val):
 
 def unpack_iters(val):
     """
-    Распаковывает строку в итерируемый тип
+    Extracts a string into an iterated type
     :param val:
-    :return: итерируемый тип
+    :return: iter
     """
 
     try:
