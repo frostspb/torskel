@@ -3,8 +3,9 @@ import json
 
 try:
     from bson import json_util
-except:
+except ImportError:
     json_util = False
+
 import tornado.gen
 from tornado.options import options
 from torskel.str_utils import get_hash_str
@@ -128,15 +129,16 @@ class TorskelHandler(tornado.web.RequestHandler):
         """
         return await self.application.http_request_post(url, body)
 
-    async def set_redis_exp_val(self, key, val, exp, convert_to_json=False):
+    async def set_redis_exp_val(self, key, val, exp, convert_to_json=False, use_json_utils=False):
         """
         Write value to redis
         :param key: key
         :param val: value
         :param exp: Expire time in seconds
         :param convert_to_json: bool
+        :param use_json_utils: bool use json utils from bson
         """
-        await self.application.set_redis_exp_val(key, val, exp, convert_to_json)
+        await self.application.set_redis_exp_val(key, val, exp, convert_to_json, use_json_utils)
 
     async def del_redis_val(self, key):
         """
@@ -146,12 +148,13 @@ class TorskelHandler(tornado.web.RequestHandler):
         """
         await self.application.del_redis_val(key)
 
-    async def get_redis_val(self, key, from_json=True):
+    async def get_redis_val(self, key, from_json=True, use_json_utils=False):
         """
         get value from redis by key
         :param key: key
         :param from_json: loads from json
+        :param use_json_utils: bool use json utils from bson
         :return: value
         """
-        res = await self.application.get_redis_val(key, from_json)
+        res = await self.application.get_redis_val(key, from_json, use_json_utils)
         return res

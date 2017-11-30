@@ -6,6 +6,11 @@ import tornado.log
 import tornado.web
 
 try:
+    from bson import json_util
+except ImportError:
+    json_util = False
+
+try:
     import aioredis
 except ImportError:
     aioredis = None
@@ -283,17 +288,21 @@ class TorskelServer(tornado.web.Application):
             minsize=options.redis_min_con, maxsize=options.redis_max_con,
             loop=loop))
 
-    async def set_redis_exp_val(self, key, val, exp, convert_to_json=False):
+    async def set_redis_exp_val(self, key, val, exp, convert_to_json=False, use_json_utils=False):
         """
         Write value to redis
         :param key: key
         :param val: value
         :param exp: Expire time in seconds
         :param convert_to_json: bool
+        :param use_json_utils: bool use json utils from bson
 
         """
         if convert_to_json:
-            val = json.dumps(val)
+            if use_json_utils and json_util:
+                val = json.dumps(val, default=json_util.default)
+            else:
+                val = json.dumps(val)
 
         with await self.redis_connection_pool as redis:
             await redis.execute('set', key, val)
@@ -308,19 +317,23 @@ class TorskelServer(tornado.web.Application):
         with await self.redis_connection_pool as redis:
             await redis.execute('del', key)
 
-    async def get_redis_val(self, key, from_json=True):
+    async def get_redis_val(self, key, from_json=True, use_json_utils=False):
         """
         get value from redis by key
         :param key: key
         :param from_json: loads from json
+        :param use_json_utils: bool use json utils from bson
         :return: value
         """
         try:
             with await self.redis_connection_pool as redis:
                 r = await redis.execute('get', key)
-                redis_val = r.decode('utf-8')
+                redis_val = r.decode('utf-8') if r is not None else r
                 if redis_val:
-                    res = json.loads(redis_val) if from_json else redis_val
+                    if use_json_utils and json_util:
+                        res = json.loads(redis_val, object_hook=json_util.object_hook) if from_json else redis_val
+                    else:
+                        res = json.loads(redis_val) if from_json else redis_val
                 else:
                     res = None
                 return res
