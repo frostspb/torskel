@@ -222,36 +222,42 @@ class TorskelServer(tornado.web.Application):
     # ############################# #
     #  Async Http-client functions  #
     # ############################# #
-    async def http_request_post(self, url, body):
+    async def http_request_post(self, url, body, to_json=False):
         """
         http request. Method POST
         :param url: url
         :param body: dict with POST-params
+        :param to_json: boolean, convert response to dict
         :return: response
         """
         try:
             headers = None
             param_s = urlencode(body)
 
-            res = await self.http_client.fetch(url, method='POST', body=param_s, headers=headers)
+            res_fetch = await self.http_client.fetch(url, method='POST', body=param_s, headers=headers)
 
-            res_s = res.body.decode(encoding="utf-8")
-            res_json = json.loads(res_s)
+            res_s = res_fetch.body.decode(encoding="utf-8") if res_fetch is not None else res_fetch
+            if to_json:
+                res = json.loads(res_s)
+
+            else:
+                res = res_s
         except Exception:
-            res_json = None
+            res = None
             self.log_exc('http_request_post failed! url = %s  body=%s ' % (url, body))
 
-        return res_json
+        return res
 
     async def http_request_get(self, url, to_json=False):
         """
         http request. Method GET
         :param url: url
+        :param to_json: boolean, convert response to dict
         :return: response
         """
         try:
             res_fetch = await self.http_client.fetch(url)
-            res_s = res_fetch.body.decode(encoding="utf-8")
+            res_s = res_fetch.body.decode(encoding="utf-8") if res_fetch is not None else res_fetch
             if to_json:
                 res_json = json.loads(res_s)
                 res = res_json
