@@ -132,7 +132,7 @@ class TorskelHandler(tornado.web.RequestHandler):
         return await self.application.http_request_post(url, body, **kwargs)
 
     # TODO refact add params to kwargs
-    async def set_redis_exp_val(self, key, val, exp, convert_to_json=False, use_json_utils=False):
+    async def set_redis_exp_val(self, key, val, exp, **kwargs):
         """
         Write value to redis
         :param key: key
@@ -141,7 +141,7 @@ class TorskelHandler(tornado.web.RequestHandler):
         :param convert_to_json: bool
         :param use_json_utils: bool use json utils from bson
         """
-        await self.application.set_redis_exp_val(key, val, exp, convert_to_json, use_json_utils)
+        await self.application.set_redis_exp_val(key, val, exp, **kwargs)
 
     async def del_redis_val(self, key):
         """
@@ -151,7 +151,7 @@ class TorskelHandler(tornado.web.RequestHandler):
         """
         await self.application.del_redis_val(key)
 
-    async def get_redis_val(self, key, from_json=True, use_json_utils=False):
+    async def get_redis_val(self, key, **kwargs):
         """
         get value from redis by key
         :param key: key
@@ -159,5 +159,5 @@ class TorskelHandler(tornado.web.RequestHandler):
         :param use_json_utils: bool use json utils from bson
         :return: value
         """
-        res = await self.application.get_redis_val(key, from_json, use_json_utils)
+        res = await self.application.get_redis_val(key, **kwargs)
         return res

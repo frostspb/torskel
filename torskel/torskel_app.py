@@ -301,9 +301,7 @@ class TorskelServer(tornado.web.Application):
             minsize=options.redis_min_con, maxsize=options.redis_max_con,
             loop=loop))
 
-    # TODO refact add params to kwargs
-
-    async def set_redis_exp_val(self, key, val, exp, convert_to_json=False, use_json_utils=False):
+    async def set_redis_exp_val(self, key, val, exp, **kwargs):
         """
         Write value to redis
         :param key: key
@@ -313,6 +311,8 @@ class TorskelServer(tornado.web.Application):
         :param use_json_utils: bool use json utils from bson
 
         """
+        convert_to_json = kwargs.get('convert_to_json', False)
+        use_json_utils = kwargs.get('use_json_utils', False)
         if convert_to_json:
             if use_json_utils and json_util:
                 val = json.dumps(val, default=json_util.default)
@@ -332,7 +332,7 @@ class TorskelServer(tornado.web.Application):
         with await self.redis_connection_pool as redis:
             await redis.execute('del', key)
 
-    async def get_redis_val(self, key, from_json=True, use_json_utils=False):
+    async def get_redis_val(self, key, **kwargs):
         """
         get value from redis by key
         :param key: key
@@ -341,6 +341,8 @@ class TorskelServer(tornado.web.Application):
         :return: value
         """
         try:
+            from_json = kwargs.get('from_json', False)
+            use_json_utils = kwargs.get('use_json_utils', False)
             with await self.redis_connection_pool as redis:
                 r = await redis.execute('get', key)
                 redis_val = r.decode('utf-8') if r is not None else r
