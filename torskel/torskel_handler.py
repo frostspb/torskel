@@ -119,7 +119,7 @@ class TorskelHandler(tornado.web.RequestHandler):
         :return: response
         """
 
-        return await self.application.http_request_get(url, kwargs)
+        return await self.application.http_request_get(url, **kwargs)
 
     async def http_request_post(self, url, body, **kwargs):
         """
@@ -129,7 +129,7 @@ class TorskelHandler(tornado.web.RequestHandler):
         :param from_json: boolean, convert response to dict
         :return: response
         """
-        return await self.application.http_request_post(url, body,kwargs)
+        return await self.application.http_request_post(url, body, **kwargs)
 
     # TODO refact add params to kwargs
     async def set_redis_exp_val(self, key, val, exp, convert_to_json=False, use_json_utils=False):
