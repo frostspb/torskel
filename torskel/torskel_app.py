@@ -4,6 +4,7 @@ import os.path
 import logging.handlers
 import tornado.log
 import tornado.web
+import xmltodict
 
 try:
     from bson import json_util
@@ -222,7 +223,7 @@ class TorskelServer(tornado.web.Application):
     # ############################# #
     #  Async Http-client functions  #
     # ############################# #
-    async def http_request_post(self, url, body, from_json=False):
+    async def http_request_post(self, url, body, **kwargs):
         """
         http request. Method POST
         :param url: url
@@ -237,18 +238,21 @@ class TorskelServer(tornado.web.Application):
             res_fetch = await self.http_client.fetch(url, method='POST', body=param_s, headers=headers)
 
             res_s = res_fetch.body.decode(encoding="utf-8") if res_fetch is not None else res_fetch
+            from_json = kwargs.get('from_json', False)
+            from_xml = kwargs.get('from_xml', False)
+            res = res_s
             if from_json:
                 res = json.loads(res_s)
+            if from_xml:
+                res = json.loads(json.dumps(xmltodict.parse(res_s)))
 
-            else:
-                res = res_s
         except Exception:
             res = None
             self.log_exc('http_request_post failed! url = %s  body=%s ' % (url, body))
 
         return res
 
-    async def http_request_get(self, url, from_json=False):
+    async def http_request_get(self, url, **kwargs):
         """
         http request. Method GET
         :param url: url
@@ -258,11 +262,14 @@ class TorskelServer(tornado.web.Application):
         try:
             res_fetch = await self.http_client.fetch(url)
             res_s = res_fetch.body.decode(encoding="utf-8") if res_fetch is not None else res_fetch
+            from_json = kwargs.get('from_json', False)
+            from_xml = kwargs.get('from_xml', False)
+            res = res_s
             if from_json:
-                res_json = json.loads(res_s)
-                res = res_json
-            else:
-                res = res_s
+                res = json.loads(res_s)
+
+            if from_xml:
+                res = json.loads(json.dumps(xmltodict.parse(res_s)))
         except Exception:
             self.log_exc('http_request_get failed! url = %s' % url)
             res = None
@@ -293,6 +300,8 @@ class TorskelServer(tornado.web.Application):
             redis_addr, password=redis_psw, db=redis_db,
             minsize=options.redis_min_con, maxsize=options.redis_max_con,
             loop=loop))
+
+    # TODO refact add params to kwargs
 
     async def set_redis_exp_val(self, key, val, exp, convert_to_json=False, use_json_utils=False):
         """

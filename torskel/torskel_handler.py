@@ -111,7 +111,7 @@ class TorskelHandler(tornado.web.RequestHandler):
         """
         self.application.log_exc(msg, grep_label)
 
-    async def http_request_get(self, url, from_json=False):
+    async def http_request_get(self, url, **kwargs):
         """
         async http request. Method GET
         :param url: url
@@ -119,9 +119,9 @@ class TorskelHandler(tornado.web.RequestHandler):
         :return: response
         """
 
-        return await self.application.http_request_get(url, from_json)
+        return await self.application.http_request_get(url, kwargs)
 
-    async def http_request_post(self, url, body, from_json=False):
+    async def http_request_post(self, url, body, **kwargs):
         """
         async http request. Method POST
         :param url: url
@@ -129,8 +129,9 @@ class TorskelHandler(tornado.web.RequestHandler):
         :param from_json: boolean, convert response to dict
         :return: response
         """
-        return await self.application.http_request_post(url, body, from_json)
+        return await self.application.http_request_post(url, body,kwargs)
 
+    # TODO refact add params to kwargs
     async def set_redis_exp_val(self, key, val, exp, convert_to_json=False, use_json_utils=False):
         """
         Write value to redis
