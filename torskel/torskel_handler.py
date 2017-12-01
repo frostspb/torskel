@@ -111,23 +111,25 @@ class TorskelHandler(tornado.web.RequestHandler):
         """
         self.application.log_exc(msg, grep_label)
 
-    async def http_request_get(self, url):
+    async def http_request_get(self, url, from_json=False):
         """
         async http request. Method GET
         :param url: url
+        :param from_json: boolean, convert response to dict
         :return: response
         """
 
-        return await self.application.http_request_get(url)
+        return await self.application.http_request_get(url, from_json)
 
-    async def http_request_post(self, url, body):
+    async def http_request_post(self, url, body, from_json=False):
         """
         async http request. Method POST
         :param url: url
         :param body: dict with POST-params
+        :param from_json: boolean, convert response to dict
         :return: response
         """
-        return await self.application.http_request_post(url, body)
+        return await self.application.http_request_post(url, body, from_json)
 
     async def set_redis_exp_val(self, key, val, exp, convert_to_json=False, use_json_utils=False):
         """
