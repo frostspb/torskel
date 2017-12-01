@@ -222,12 +222,12 @@ class TorskelServer(tornado.web.Application):
     # ############################# #
     #  Async Http-client functions  #
     # ############################# #
-    async def http_request_post(self, url, body, to_json=False):
+    async def http_request_post(self, url, body, from_json=False):
         """
         http request. Method POST
         :param url: url
         :param body: dict with POST-params
-        :param to_json: boolean, convert response to dict
+        :param from_json: boolean, convert response to dict
         :return: response
         """
         try:
@@ -237,7 +237,7 @@ class TorskelServer(tornado.web.Application):
             res_fetch = await self.http_client.fetch(url, method='POST', body=param_s, headers=headers)
 
             res_s = res_fetch.body.decode(encoding="utf-8") if res_fetch is not None else res_fetch
-            if to_json:
+            if from_json:
                 res = json.loads(res_s)
 
             else:
@@ -248,17 +248,17 @@ class TorskelServer(tornado.web.Application):
 
         return res
 
-    async def http_request_get(self, url, to_json=False):
+    async def http_request_get(self, url, from_json=False):
         """
         http request. Method GET
         :param url: url
-        :param to_json: boolean, convert response to dict
+        :param from_json: boolean, convert response to dict
         :return: response
         """
         try:
             res_fetch = await self.http_client.fetch(url)
             res_s = res_fetch.body.decode(encoding="utf-8") if res_fetch is not None else res_fetch
-            if to_json:
+            if from_json:
                 res_json = json.loads(res_s)
                 res = res_json
             else:
