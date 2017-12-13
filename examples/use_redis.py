@@ -22,6 +22,7 @@ If you using password for connecting to redis define redis_psw option
 Default redis db=0 for overwrite this - define option redis_db
 """
 
+options.define('redis_psw', 'redisS5ab80')
 
 class RedisApplication(TorskelServer):
     def __init__(self, handlers, **settings):
