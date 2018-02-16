@@ -234,7 +234,7 @@ class TorskelServer(tornado.web.Application):
         """
         from_json = kwargs.get('from_json', False)
         from_xml = kwargs.get('from_xml', False)
-        log_timeout_exc = kwargs.get('log_timeout_exc', False)
+        log_timeout_exc = kwargs.get('log_timeout_exc', True)
         res = None
         try:
             headers = None
@@ -272,7 +272,7 @@ class TorskelServer(tornado.web.Application):
         """
         from_json = kwargs.get('from_json', False)
         from_xml = kwargs.get('from_xml', False)
-        log_timeout_exc = kwargs.get('log_timeout_exc', False)
+        log_timeout_exc = kwargs.get('log_timeout_exc', True)
         res = None
         try:
             res_fetch = await self.http_client.fetch(url)
