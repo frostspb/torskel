@@ -5,6 +5,7 @@ import logging.handlers
 import tornado.log
 import tornado.web
 import xmltodict
+import tornado.httpclient
 
 try:
     from bson import json_util
@@ -231,6 +232,10 @@ class TorskelServer(tornado.web.Application):
         :param from_json: boolean, convert response to dict
         :return: response
         """
+        from_json = kwargs.get('from_json', False)
+        from_xml = kwargs.get('from_xml', False)
+        log_timeout_exc = kwargs.get('log_timeout_exc', False)
+        res = None
         try:
             headers = None
             param_s = urlencode(body)
@@ -238,13 +243,19 @@ class TorskelServer(tornado.web.Application):
             res_fetch = await self.http_client.fetch(url, method='POST', body=param_s, headers=headers)
 
             res_s = res_fetch.body.decode(encoding="utf-8") if res_fetch is not None else res_fetch
-            from_json = kwargs.get('from_json', False)
-            from_xml = kwargs.get('from_xml', False)
+
             res = res_s
             if from_json:
                 res = json.loads(res_s)
             if from_xml:
                 res = json.loads(json.dumps(xmltodict.parse(res_s)))
+        except tornado.httpclient.HTTPError as e:
+            if e.code == 599:
+                if log_timeout_exc:
+                    self.log_exc('http_request_get failed by timeout')
+                else:
+                    self.log_debug('http_request_get failed by timeout')
+                res = None
 
         except Exception:
             res = None
@@ -259,20 +270,32 @@ class TorskelServer(tornado.web.Application):
         :param from_json: boolean, convert response to dict
         :return: response
         """
+        from_json = kwargs.get('from_json', False)
+        from_xml = kwargs.get('from_xml', False)
+        log_timeout_exc = kwargs.get('log_timeout_exc', False)
+        res = None
         try:
             res_fetch = await self.http_client.fetch(url)
             res_s = res_fetch.body.decode(encoding="utf-8") if res_fetch is not None else res_fetch
-            from_json = kwargs.get('from_json', False)
-            from_xml = kwargs.get('from_xml', False)
+
             res = res_s
             if from_json:
                 res = json.loads(res_s)
 
             if from_xml:
                 res = json.loads(json.dumps(xmltodict.parse(res_s)))
+        except tornado.httpclient.HTTPError as e:
+            if e.code == 599:
+                if log_timeout_exc:
+                    self.log_exc('http_request_get failed by timeout')
+                else:
+                    self.log_debug('http_request_get failed by timeout')
+                res = None
         except Exception:
             self.log_exc('http_request_get failed! url = %s' % url)
             res = None
+
+
         return res
 
     # ######################## #
