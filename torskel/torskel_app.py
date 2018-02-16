@@ -253,7 +253,7 @@ class TorskelServer(tornado.web.Application):
         except tornado.httpclient.HTTPError as e:
             if e.code == 599:
                 if log_timeout_exc is True:
-                    self.log_exc('http_request_get failed by timeout')
+                    self.log_exc('http_request_get failed by timeout url = %s' % url)
                 else:
                     self.log_debug('http_request_get failed by timeout')
                 res = None
@@ -289,7 +289,7 @@ class TorskelServer(tornado.web.Application):
         except tornado.httpclient.HTTPError as e:
             if e.code == 599:
                 if log_timeout_exc is True:
-                    self.log_exc('http_request_get failed by timeout')
+                    self.log_exc('http_request_get failed by timeout url = %s' % url)
                 else:
                     self.log_debug('http_request_get failed by timeout')
                 res = None
