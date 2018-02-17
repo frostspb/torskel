@@ -44,6 +44,10 @@ settings = {
 options.define('debug', default=True, help='debug mode', type=bool)
 options.define("port", default=8888, help="run on the given port", type=int)
 
+# http-client params
+options.define("max_http_clients", default=100, type=int)
+options.define("http_client_timeout", default=30, type=int)
+
 # mail logger params
 options.define('use_mail_logging', default=False, help='SMTP log handler', type=bool)
 options.define("log_mail_subj", default='', type=str)
@@ -108,7 +112,7 @@ class TorskelServer(tornado.web.Application):
         else:
             self.react_env = self.react_assets = None
 
-        self.http_client = AsyncHTTPClient() if create_http_client else None
+        self.http_client = AsyncHTTPClient(max_clients=options.max_http_clients) if create_http_client else None
 
     # ########################### #
     #  Validate params functions  #
