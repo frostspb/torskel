@@ -4,6 +4,8 @@ import os.path
 import logging.handlers
 import tornado.log
 import tornado.web
+import xmltodict
+import tornado.httpclient
 
 try:
     from bson import json_util
@@ -26,6 +28,11 @@ try:
 except ImportError:
     jinja2_import = False
 
+try:
+    import pycurl
+except ImportError:
+    pycurl = None
+
 
 from tornado.options import options
 from urllib.parse import urlencode
@@ -43,6 +50,11 @@ settings = {
 
 options.define('debug', default=True, help='debug mode', type=bool)
 options.define("port", default=8888, help="run on the given port", type=int)
+
+# http-client params
+options.define("max_http_clients", default=100, type=int)
+options.define("http_client_timeout", default=30, type=int)
+options.define("use_curl_http_client", default=False, type=bool)
 
 # mail logger params
 options.define('use_mail_logging', default=False, help='SMTP log handler', type=bool)
@@ -108,7 +120,14 @@ class TorskelServer(tornado.web.Application, TorskelLogMixin):
         else:
             self.react_env = self.react_assets = None
 
-        self.http_client = AsyncHTTPClient() if create_http_client else None
+        self.http_client = AsyncHTTPClient(max_clients=options.max_http_clients) if create_http_client else None
+        if options.use_curl_http_client:
+            self.log_debug(options.use_curl_http_client, grep_label='use_curl_http_client')
+            if pycurl is None:
+                raise ImportError('Required package for pycurl CurlAsyncHTTPClient  is missing')
+            else:
+                self.log_debug('configure curl')
+                AsyncHTTPClient.configure("tornado.curl_httpclient.CurlAsyncHTTPClient")
 
     # ########################### #
     #  Validate params functions  #
@@ -159,14 +178,19 @@ class TorskelServer(tornado.web.Application, TorskelLogMixin):
     # ############################# #
     #  Async Http-client functions  #
     # ############################# #
-    async def http_request_post(self, url, body, to_json=False):
+    async def http_request_post(self, url, body, **kwargs):
         """
         http request. Method POST
         :param url: url
         :param body: dict with POST-params
-        :param to_json: boolean, convert response to dict
+        :param from_json: boolean, convert response to dict
         :return: response
         """
+        from_json = kwargs.get('from_json', False)
+        from_xml = kwargs.get('from_xml', False)
+        log_timeout_exc = kwargs.get('log_timeout_exc', True)
+        self.log_debug(log_timeout_exc, grep_label='log_timeout_exc')
+        res = None
         try:
             headers = None
             param_s = urlencode(body)
@@ -174,35 +198,60 @@ class TorskelServer(tornado.web.Application, TorskelLogMixin):
             res_fetch = await self.http_client.fetch(url, method='POST', body=param_s, headers=headers)
 
             res_s = res_fetch.body.decode(encoding="utf-8") if res_fetch is not None else res_fetch
-            if to_json:
-                res = json.loads(res_s)
 
-            else:
-                res = res_s
+            res = res_s
+            if from_json:
+                res = json.loads(res_s)
+            if from_xml:
+                res = json.loads(json.dumps(xmltodict.parse(res_s)))
+        except tornado.httpclient.HTTPError as e:
+            if e.code == 599:
+                if log_timeout_exc is True:
+                    self.log_exc('http_request_get failed by timeout url = %s' % url)
+                else:
+                    self.log_debug('http_request_get failed by timeout')
+                res = None
+
         except Exception:
             res = None
             self.log_exc('http_request_post failed! url = %s  body=%s ' % (url, body))
 
         return res
 
-    async def http_request_get(self, url, to_json=False):
+    async def http_request_get(self, url, **kwargs):
         """
         http request. Method GET
         :param url: url
-        :param to_json: boolean, convert response to dict
+        :param from_json: boolean, convert response to dict
         :return: response
         """
+        from_json = kwargs.get('from_json', False)
+        from_xml = kwargs.get('from_xml', False)
+        log_timeout_exc = kwargs.get('log_timeout_exc', True)
+        self.log_debug(log_timeout_exc, grep_label='log_timeout_exc')
+        res = None
         try:
             res_fetch = await self.http_client.fetch(url)
             res_s = res_fetch.body.decode(encoding="utf-8") if res_fetch is not None else res_fetch
-            if to_json:
-                res_json = json.loads(res_s)
-                res = res_json
-            else:
-                res = res_s
+
+            res = res_s
+            if from_json:
+                res = json.loads(res_s)
+
+            if from_xml:
+                res = json.loads(json.dumps(xmltodict.parse(res_s)))
+        except tornado.httpclient.HTTPError as e:
+            if e.code == 599:
+                if log_timeout_exc is True:
+                    self.log_exc('http_request_get failed by timeout url = %s' % url)
+                else:
+                    self.log_debug('http_request_get failed by timeout')
+                res = None
         except Exception:
             self.log_exc('http_request_get failed! url = %s' % url)
             res = None
+
+
         return res
 
     # ######################## #
@@ -231,7 +280,7 @@ class TorskelServer(tornado.web.Application, TorskelLogMixin):
             minsize=options.redis_min_con, maxsize=options.redis_max_con,
             loop=loop))
 
-    async def set_redis_exp_val(self, key, val, exp, convert_to_json=False, use_json_utils=False):
+    async def set_redis_exp_val(self, key, val, exp, **kwargs):
         """
         Write value to redis
         :param key: key
@@ -241,6 +290,8 @@ class TorskelServer(tornado.web.Application, TorskelLogMixin):
         :param use_json_utils: bool use json utils from bson
 
         """
+        convert_to_json = kwargs.get('convert_to_json', False)
+        use_json_utils = kwargs.get('use_json_utils', False)
         if convert_to_json:
             if use_json_utils and json_util:
                 val = json.dumps(val, default=json_util.default)
@@ -260,7 +311,7 @@ class TorskelServer(tornado.web.Application, TorskelLogMixin):
         with await self.redis_connection_pool as redis:
             await redis.execute('del', key)
 
-    async def get_redis_val(self, key, from_json=True, use_json_utils=False):
+    async def get_redis_val(self, key, **kwargs):
         """
         get value from redis by key
         :param key: key
@@ -269,6 +320,8 @@ class TorskelServer(tornado.web.Application, TorskelLogMixin):
         :return: value
         """
         try:
+            from_json = kwargs.get('from_json', False)
+            use_json_utils = kwargs.get('use_json_utils', False)
             with await self.redis_connection_pool as redis:
                 r = await redis.execute('get', key)
                 redis_val = r.decode('utf-8') if r is not None else r

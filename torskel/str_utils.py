@@ -7,6 +7,16 @@ hash_sha224_tmpl = re.compile(r"\b([a-f\d]{56}|[A-F\d]{56})\b")
 all_hash_tmpl = re.compile(r"^(?:[a-fA-F\d]{32,40})$|^(?:[a-fA-F\d]{52,60})$|^(?:[a-fA-F\d]{92,100})$")
 
 
+def chr_set_null(chr_value):
+    """sql util function"""
+    return "null" if chr_value is None or not chr_value else ''.join(("'", chr_value, "'"))
+
+
+def int_set_null(int_value):
+    """sql util function"""
+    return "null" if int_value is None else str(int_value)
+
+
 def valid_conversion(val, type_to_convert):
     """
     Checking whether it is possible to convert val to the specified type
