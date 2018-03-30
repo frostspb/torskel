@@ -120,9 +120,11 @@ class TorskelServer(tornado.web.Application):
 
         self.http_client = AsyncHTTPClient(max_clients=options.max_http_clients) if create_http_client else None
         if options.use_curl_http_client:
+            self.log_debug(options.use_curl_http_client, grep_label='use_curl_http_client')
             if pycurl is None:
                 raise ImportError('Required package for pycurl CurlAsyncHTTPClient  is missing')
             else:
+                self.log_debug('configure curl')
                 AsyncHTTPClient.configure("tornado.curl_httpclient.CurlAsyncHTTPClient")
 
     # ########################### #
