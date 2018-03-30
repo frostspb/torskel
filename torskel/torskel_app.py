@@ -28,6 +28,11 @@ try:
 except ImportError:
     jinja2_import = False
 
+try:
+    import pycurl
+except ImportError:
+    pycurl = None
+
 
 from tornado.options import options
 from urllib.parse import urlencode
@@ -47,6 +52,7 @@ options.define("port", default=8888, help="run on the given port", type=int)
 # http-client params
 options.define("max_http_clients", default=100, type=int)
 options.define("http_client_timeout", default=30, type=int)
+options.define("use_curl_http_client", default=False, type=bool)
 
 # mail logger params
 options.define('use_mail_logging', default=False, help='SMTP log handler', type=bool)
@@ -113,6 +119,11 @@ class TorskelServer(tornado.web.Application):
             self.react_env = self.react_assets = None
 
         self.http_client = AsyncHTTPClient(max_clients=options.max_http_clients) if create_http_client else None
+        if options.use_curl_http_client:
+            if pycurl is None:
+                raise ImportError('Required package for pycurl CurlAsyncHTTPClient  is missing')
+            else:
+                AsyncHTTPClient.configure("tornado.curl_httpclient.CurlAsyncHTTPClient")
 
     # ########################### #
     #  Validate params functions  #
