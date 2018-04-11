@@ -280,7 +280,7 @@ class TorskelServer(tornado.web.Application, TorskelLogMixin):
             minsize=options.redis_min_con, maxsize=options.redis_max_con,
             loop=loop))
 
-    async def set_redis_exp_val(self, key, val, exp, **kwargs):
+    async def set_redis_exp_val(self, key, val, exp=None, **kwargs):
         """
         Write value to redis
         :param key: key
@@ -300,7 +300,8 @@ class TorskelServer(tornado.web.Application, TorskelLogMixin):
 
         with await self.redis_connection_pool as redis:
             await redis.execute('set', key, val)
-            await redis.execute('expire', key, exp)
+            if isinstance(exp, int):
+                await redis.execute('expire', key, exp)
 
     async def del_redis_val(self, key):
         """
