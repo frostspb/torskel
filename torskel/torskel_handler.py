@@ -10,13 +10,15 @@ import tornado.gen
 from tornado.options import options
 from torskel.str_utils import get_hash_str
 from torskel.str_utils import is_hash_str
+from torskel.torskel_mixins.log_mix import TorskelLogMixin
 
 
-class TorskelHandler(tornado.web.RequestHandler):
+class TorskelHandler(tornado.web.RequestHandler, TorskelLogMixin):
     def __init__(self, application, request, **kwargs):
         super(TorskelHandler, self).__init__(application, request, **kwargs)
         # filter dict by list of keys
         self.filter_dict = lambda x, y: dict([(i, x[i]) for i in x if i in set(y)])
+
 
     def react_render(self, template_name, render_data_dict=None):
         if render_data_dict is None:
@@ -84,32 +86,7 @@ class TorskelHandler(tornado.web.RequestHandler):
 
         self.log_exc(msg % (type(self).__name__, self.request, e))
 
-    def log_debug(self, msg, grep_label=''):
-        """
-        Log debug message
-        :param msg: message
-        :param grep_label: label for grep
-        :return:
-        """
-        self.application.log_debug(msg, grep_label=grep_label)
 
-    def log_err(self, msg, grep_label=''):
-        """
-        Log error
-        :param msg: message
-        :param grep_label: label for grep
-        :return:
-        """
-        self.application.log_err(msg, grep_label=grep_label)
-
-    def log_exc(self, msg, grep_label=''):
-        """
-        Log exception
-        :param msg: message
-        :param grep_label: label for grep
-        :return:
-        """
-        self.application.log_exc(msg, grep_label)
 
     async def http_request_get(self, url, **kwargs):
         """
