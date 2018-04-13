@@ -78,7 +78,7 @@ options.define('use_reactjs', default=False, help='use reactjs', type=bool)
 options.define("react_assets_file", default='webpack-assets.json', type=str)
 
 
-class TorskelServer(tornado.web.Application, TorskelLogMixin):
+class TorskelServer(tornado.web.Application):
     def __init__(self, handlers, root_dir=None, static_path=None, template_path=None,
                  create_http_client=True, **settings):
 

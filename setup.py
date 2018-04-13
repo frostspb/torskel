@@ -1,7 +1,7 @@
 from distutils.core import setup
 from setuptools import find_packages
 
-VERSION = '0.1.70'
+VERSION = '0.1.71'
 
 setup(
     name='torskel',
