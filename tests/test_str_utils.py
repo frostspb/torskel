@@ -4,7 +4,8 @@ import hashlib
 from torskel.str_utils import get_hash_str
 from torskel.str_utils import is_hash_str
 from torskel.str_utils import valid_conversion
-
+from torskel.str_utils import is_valid_ip
+from torskel.str_utils import is_valid_mac
 
 class TestStrUtils(unittest.TestCase):
     def setUp(self):
@@ -32,6 +33,22 @@ class TestStrUtils(unittest.TestCase):
 
     def test_is_hash_str_wrong_val(self):
         res = is_hash_str(23423)
+        self.assertEqual(res, False)
+
+    def test_valid_ip(self):
+        res = is_valid_ip('127.0.0.1')
+        self.assertEqual(res, True)
+
+    def test_valid_ip_wrong_val(self):
+        res = is_valid_ip('327.0.0.1')
+        self.assertEqual(res, False)
+
+    def test_valid_mac(self):
+        res = is_valid_mac('00:02:02:34:72:a5')
+        self.assertEqual(res, True)
+
+    def test_valid_mac_wrong_val(self):
+        res = is_valid_mac('.1')
         self.assertEqual(res, False)
 
 

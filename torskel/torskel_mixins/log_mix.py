@@ -1,4 +1,4 @@
-
+import logging.handlers
 import tornado.log
 
 LOG_MSG_DEBUG_TMPL = '%s %s'
@@ -53,3 +53,25 @@ class TorskelLogMixin(object):
         :return:
         """
         self.logger.exception(self.get_log_msg(msg, grep_label))
+
+    def set_mail_logging(self, mail_host, from_addr, to_addr, subject, credentials_list=None, log_level=logging.ERROR):
+        """
+        Init SMTP log handler for sendig log to email
+        :param mail_host: host
+        :param from_addr: from
+        :param to_addr: to
+        :param subject: subject
+        :param credentials_list: (login, password)
+        :param log_level: log level
+        :return:
+        """
+        # TODO validate mail params try catch
+        mail_logging = logging.handlers.SMTPHandler(mailhost=mail_host,
+                                                    fromaddr=from_addr,
+                                                    toaddrs=to_addr,
+                                                    subject=subject,
+                                                    credentials=credentials_list
+                                                    )
+
+        mail_logging.setLevel(log_level)
+        self.logger.addHandler(mail_logging)

@@ -39,9 +39,6 @@ from urllib.parse import urlencode
 from tornado.httpclient import AsyncHTTPClient
 from tornado.autoreload import watch
 
-from torskel.torskel_mixins.log_mix import TorskelLogMixin
-
-
 
 settings = {
     # 'cookie_secret': options.secret_key,
@@ -81,7 +78,7 @@ options.define('use_reactjs', default=False, help='use reactjs', type=bool)
 options.define("react_assets_file", default='webpack-assets.json', type=str)
 
 
-class TorskelServer(tornado.web.Application, TorskelLogMixin):
+class TorskelServer(tornado.web.Application):
     def __init__(self, handlers, root_dir=None, static_path=None, template_path=None,
                  create_http_client=True, **settings):
 
@@ -97,6 +94,7 @@ class TorskelServer(tornado.web.Application, TorskelLogMixin):
                          template_path=app_template_dir,
                          **settings)
         #self.redis_connection_pool = None
+        self.logger = tornado.log.gen_log
 
         tornado.ioloop.IOLoop.configure('tornado.platform.asyncio.AsyncIOMainLoop')
 
@@ -338,3 +336,70 @@ class TorskelServer(tornado.web.Application, TorskelLogMixin):
             self.log_exc('get_redis_val failed key = %s' % key)
             res = None
             return res
+
+    # ################### #
+    #  Logging functions  #
+    # ################### #
+
+    def get_log_msg(self, msg, grep_label=''):
+        """
+        Make message by template
+        :param msg: message
+        :param grep_label: label for grep
+        :return: compiled message
+        """
+        try:
+            res = self.log_msg_tmpl % (grep_label, msg)
+        except:
+            res = msg
+        return res
+
+    def log_debug(self, msg, grep_label=''):
+        """
+        Log debug message
+        :param msg: message
+        :param grep_label: label for grep
+        :return:
+        """
+        self.logger.debug(self.get_log_msg(msg, grep_label))
+
+    def log_err(self, msg, grep_label=''):
+        """
+        Log error
+        :param msg: message
+        :param grep_label: label for grep
+        :return:
+        """
+        self.logger.error(self.get_log_msg(msg, grep_label))
+
+    def log_exc(self, msg, grep_label=''):
+        """
+        Log exception
+        :param msg: message
+        :param grep_label: label for grep
+        :return:
+        """
+        self.logger.exception(self.get_log_msg(msg, grep_label))
+
+    def set_mail_logging(self, mail_host, from_addr, to_addr, subject, credentials_list=None,
+                         log_level=logging.ERROR):
+        """
+        Init SMTP log handler for sendig log to email
+        :param mail_host: host
+        :param from_addr: from
+        :param to_addr: to
+        :param subject: subject
+        :param credentials_list: (login, password)
+        :param log_level: log level
+        :return:
+        """
+        # TODO validate mail params try catch
+        mail_logging = logging.handlers.SMTPHandler(mailhost=mail_host,
+                                                    fromaddr=from_addr,
+                                                    toaddrs=to_addr,
+                                                    subject=subject,
+                                                    credentials=credentials_list
+                                                    )
+
+        mail_logging.setLevel(log_level)
+        self.logger.addHandler(mail_logging)
