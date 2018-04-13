@@ -6,7 +6,7 @@ import ipaddress
 
 hash_sha224_tmpl = re.compile(r"\b([a-f\d]{56}|[A-F\d]{56})\b")
 all_hash_tmpl = re.compile(r"^(?:[a-fA-F\d]{32,40})$|^(?:[a-fA-F\d]{52,60})$|^(?:[a-fA-F\d]{92,100})$")
-mac_address = re.compile(r"[0-9a-f]{2}([-:]?)[0-9a-f]{2}(\\1[0-9a-f]{2}){4}$")
+mac_address = re.compile('^' + '[\:\-]'.join(['([0-9a-f]{2})'] * 6) + '$')
 
 
 def is_valid_ip(ip):
@@ -35,7 +35,7 @@ def is_valid_mac(mac):
     if isinstance(mac, str):
         if len(mac) > 0:
             try:
-                res = mac_address.match(mac) is not None
+                res = mac_address.match(mac.lower()) is not None
             except Exception:
                 res = False
     return res
