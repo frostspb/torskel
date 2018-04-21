@@ -163,7 +163,7 @@ class TorskelServer(tornado.web.Application):
     #  Init with loop   #
     # ################# #
 
-    def init_with_loop(self, loop):
+    def init_with_loop(self, loop=None):
         if options.use_redis:
             # check aioredis lib
             if aioredis is None:
@@ -256,7 +256,7 @@ class TorskelServer(tornado.web.Application):
     #  Redis client functions  #
     # ######################## #
 
-    def init_redis_pool(self, loop):
+    def init_redis_pool(self, loop=None):
         """
         Init redis connection pool
         :param loop: ioloop
@@ -275,8 +275,7 @@ class TorskelServer(tornado.web.Application):
 
         self.redis_connection_pool = loop.run_until_complete(aioredis.create_pool(
             redis_addr, password=redis_psw, db=redis_db,
-            minsize=options.redis_min_con, maxsize=options.redis_max_con,
-            loop=loop))
+            minsize=options.redis_min_con, maxsize=options.redis_max_con))
 
     async def set_redis_exp_val(self, key, val, exp=None, **kwargs):
         """
@@ -296,10 +295,9 @@ class TorskelServer(tornado.web.Application):
             else:
                 val = json.dumps(val)
 
-        with await self.redis_connection_pool as redis:
-            await redis.execute('set', key, val)
-            if isinstance(exp, int):
-                await redis.execute('expire', key, exp)
+        await self.redis_connection_pool.execute('set', key, val)
+        if isinstance(exp, int):
+            await self.redis_connection_pool.execute('expire', key, exp)
 
     async def del_redis_val(self, key):
         """
@@ -307,8 +305,8 @@ class TorskelServer(tornado.web.Application):
         :param key: key
 
         """
-        with await self.redis_connection_pool as redis:
-            await redis.execute('del', key)
+
+        await self.redis_connection_pool.execute('del', key)
 
     async def get_redis_val(self, key, **kwargs):
         """
@@ -321,17 +319,17 @@ class TorskelServer(tornado.web.Application):
         try:
             from_json = kwargs.get('from_json', False)
             use_json_utils = kwargs.get('use_json_utils', False)
-            with await self.redis_connection_pool as redis:
-                r = await redis.execute('get', key)
-                redis_val = r.decode('utf-8') if r is not None else r
-                if redis_val:
-                    if use_json_utils and json_util:
-                        res = json.loads(redis_val, object_hook=json_util.object_hook) if from_json else redis_val
-                    else:
-                        res = json.loads(redis_val) if from_json else redis_val
+
+            r = self.redis_connection_pool.execute('get', key)
+            redis_val = r.decode('utf-8') if r is not None else r
+            if redis_val:
+                if use_json_utils and json_util:
+                    res = json.loads(redis_val, object_hook=json_util.object_hook) if from_json else redis_val
                 else:
-                    res = None
-                return res
+                    res = json.loads(redis_val) if from_json else redis_val
+            else:
+                res = None
+            return res
         except:
             self.log_exc('get_redis_val failed key = %s' % key)
             res = None
