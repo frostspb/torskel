@@ -320,7 +320,7 @@ class TorskelServer(tornado.web.Application):
             from_json = kwargs.get('from_json', False)
             use_json_utils = kwargs.get('use_json_utils', False)
 
-            r = self.redis_connection_pool.execute('get', key)
+            r = await self.redis_connection_pool.execute('get', key)
             redis_val = r.decode('utf-8') if r is not None else r
             if redis_val:
                 if use_json_utils and json_util:
