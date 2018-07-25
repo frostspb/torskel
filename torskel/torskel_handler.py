@@ -1,13 +1,10 @@
-# -*- coding: utf-8 -*-
-import json
-
 try:
     from bson import json_util
 except ImportError:
     json_util = False
 
 import tornado.gen
-from tornado.options import options
+
 from torskel.str_utils import get_hash_str
 from torskel.str_utils import is_hash_str
 from torskel.torskel_mixins.log_mix import TorskelLogMixin
@@ -17,8 +14,9 @@ class TorskelHandler(tornado.web.RequestHandler, TorskelLogMixin):
     def __init__(self, application, request, **kwargs):
         super(TorskelHandler, self).__init__(application, request, **kwargs)
         # filter dict by list of keys
-        self.filter_dict = lambda x, y: dict([(i, x[i]) for i in x if i in set(y)])
-
+        self.filter_dict = lambda x, y: dict(
+            [(i, x[i]) for i in x if i in set(y)]
+        )
 
     def react_render(self, template_name, render_data_dict=None):
         if render_data_dict is None:
@@ -63,8 +61,11 @@ class TorskelHandler(tornado.web.RequestHandler, TorskelLogMixin):
         """
 
         try:
-            res = {k: ''.join([i.decode('utf-8') for i in v]) for k, v in self.request.arguments.items()}
-        except:
+            res = {
+                k: ''.join([i.decode('utf-8') for i in v])
+                for k, v in self.request.arguments.items()
+            }
+        except Exception:
             self.log_exc('get_req_args_dict failed')
             res = {}
         return res
@@ -81,12 +82,10 @@ class TorskelHandler(tornado.web.RequestHandler, TorskelLogMixin):
     def _handle_request_exception(self, e):
         super(TorskelHandler, self)._handle_request_exception(e)
         msg = '''handler classname = %s \n
-			   request = %s \n
-		       exception = %s \n'''
+                request = %s \n
+                exception = %s \n'''
 
         self.log_exc(msg % (type(self).__name__, self.request, e))
-
-
 
     async def http_request_get(self, url, **kwargs):
         """

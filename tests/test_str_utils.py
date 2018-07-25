@@ -3,17 +3,23 @@ import re
 import hashlib
 from torskel.str_utils import get_hash_str
 from torskel.str_utils import is_hash_str
-from torskel.str_utils import valid_conversion
 from torskel.str_utils import is_valid_ip
 from torskel.str_utils import is_valid_mac
 
+
+SHA224_TMPL = r"\b([a-f\d]{56}|[A-F\d]{56})\b"
+ALL_HASH_TMPL = r"^(?:[a-fA-F\d]{32,40})$|^(?:[a-fA-F\d]{52,60})" \
+                r"$|^(?:[a-fA-F\d]{92,100})$"
+TEST_HASH = '68df004a144aa21f31047e0635c246c990ea2a373c35cedfcac53966'
+
+
 class TestStrUtils(unittest.TestCase):
     def setUp(self):
-        self.hash_sha224_tmpl = re.compile(r"\b([a-f\d]{56}|[A-F\d]{56})\b")
-        self.all_hash_tmpl = re.compile(r"^(?:[a-fA-F\d]{32,40})$|^(?:[a-fA-F\d]{52,60})$|^(?:[a-fA-F\d]{92,100})$")
-        self.test_str = 'test me'
-        self.test_hash_res = hashlib.sha224(self.test_str.encode('utf-8')).hexdigest()
-        self.test_hash = '68df004a144aa21f31047e0635c246c990ea2a373c35cedfcac53966'
+        self.hash_sha224_tmpl = re.compile(SHA224_TMPL)
+        self.all_hash_tmpl = re.compile(ALL_HASH_TMPL)
+        self.test_str = 'test me'.encode('utf-8')
+        self.test_hash_res = hashlib.sha224(self.test_str).hexdigest()
+        self.test_hash = TEST_HASH
 
     def test_get_hash_str_tmpl(self):
         res = get_hash_str(self.test_str)

@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 import json
 import os.path
 import logging.handlers
@@ -54,7 +53,8 @@ options.define("http_client_timeout", default=30, type=int)
 options.define("use_curl_http_client", default=False, type=bool)
 
 # mail logger params
-options.define('use_mail_logging', default=False, help='SMTP log handler', type=bool)
+options.define('use_mail_logging', default=False, help='SMTP log handler',
+               type=bool)
 options.define("log_mail_subj", default='', type=str)
 options.define("log_mail_from", default='', type=str)
 options.define("log_mail_to", default=[], type=list)
@@ -64,7 +64,8 @@ options.define("log_mail_psw", default='', type=str)
 
 # redis params
 options.define('use_redis', default=False, help='use redis', type=bool)
-options.define('use_redis_socket', default=True, help='connection to redis unixsocket file', type=bool)
+options.define('use_redis_socket', default=True,
+               help='connection to redis unixsocket file', type=bool)
 options.define("redis_min_con", default=5, type=int)
 options.define("redis_max_con", default=10, type=int)
 options.define("redis_host", default='127.0.0.1', type=str)
@@ -79,32 +80,39 @@ options.define("react_assets_file", default='webpack-assets.json', type=str)
 
 
 class TorskelServer(tornado.web.Application):
-    def __init__(self, handlers, root_dir=None, static_path=None, template_path=None,
-                 create_http_client=True, **settings):
+    def __init__(self, handlers, root_dir=None, static_path=None,
+                 template_path=None, create_http_client=True, **settings):
 
         # TODO add valiate paths
         if root_dir is not None:
-            app_static_dir = os.path.join(root_dir, "static") if static_path is None else static_path
+            app_static_dir = os.path.join(root_dir, "static") \
+                if static_path is None else static_path
 
-            app_template_dir = os.path.join(root_dir, "templates") if template_path is None else template_path
+            app_template_dir = os.path.join(root_dir, "templates") \
+                if template_path is None else template_path
         else:
             app_template_dir = app_static_dir = None
 
         super().__init__(handlers, static_path=app_static_dir,
                          template_path=app_template_dir,
                          **settings)
-        #self.redis_connection_pool = None
+        # self.redis_connection_pool = None
         self.logger = tornado.log.gen_log
 
-        tornado.ioloop.IOLoop.configure('tornado.platform.asyncio.AsyncIOMainLoop')
+        tornado.ioloop.IOLoop.configure(
+            'tornado.platform.asyncio.AsyncIOMainLoop'
+        )
 
         if options.use_mail_logging:
             if options.log_mail_user == '' and options.log_mail_psw == '':
                 credentials_list = None
             else:
-                credentials_list = [options.log_mail_user, options.log_mail_psw]
+                credentials_list = [
+                    options.log_mail_user, options.log_mail_psw
+                ]
 
-            self.set_mail_logging(options.log_mail_host, options.log_mail_from, options.log_mail_to,
+            self.set_mail_logging(options.log_mail_host, options.log_mail_from,
+                                  options.log_mail_to,
                                   options.log_mail_subj, credentials_list)
 
         if options.use_reactjs:
@@ -112,20 +120,28 @@ class TorskelServer(tornado.web.Application):
                 self.react_env = self.react_assets = None
                 raise ImportError('Required package jinja2 is missing')
             else:
-                self.react_env = Environment(loader=FileSystemLoader('templates'))
+                self.react_env = Environment(
+                    loader=FileSystemLoader('templates')
+                )
                 self.react_assets = self.load_react_assets()
 
         else:
             self.react_env = self.react_assets = None
 
-        self.http_client = AsyncHTTPClient(max_clients=options.max_http_clients) if create_http_client else None
+        self.http_client = AsyncHTTPClient(
+            max_clients=options.max_http_clients
+        ) if create_http_client else None
         if options.use_curl_http_client:
-            self.log_debug(options.use_curl_http_client, grep_label='use_curl_http_client')
+            self.log_debug(options.use_curl_http_client,
+                           grep_label='use_curl_http_client')
             if pycurl is None:
-                raise ImportError('Required package for pycurl CurlAsyncHTTPClient  is missing')
+                raise ImportError('Required package for pycurl '
+                                  'CurlAsyncHTTPClient  is missing')
             else:
                 self.log_debug('configure curl')
-                AsyncHTTPClient.configure("tornado.curl_httpclient.CurlAsyncHTTPClient")
+                AsyncHTTPClient.configure(
+                    "tornado.curl_httpclient.CurlAsyncHTTPClient"
+                )
 
     # ########################### #
     #  Validate params functions  #
@@ -171,8 +187,6 @@ class TorskelServer(tornado.web.Application):
             else:
                 self.init_redis_pool(loop)
 
-
-
     # ############################# #
     #  Async Http-client functions  #
     # ############################# #
@@ -193,9 +207,12 @@ class TorskelServer(tornado.web.Application):
             headers = None
             param_s = urlencode(body)
 
-            res_fetch = await self.http_client.fetch(url, method='POST', body=param_s, headers=headers)
+            res_fetch = await self.http_client.fetch(url, method='POST',
+                                                     body=param_s,
+                                                     headers=headers)
 
-            res_s = res_fetch.body.decode(encoding="utf-8") if res_fetch is not None else res_fetch
+            res_s = res_fetch.body.decode(encoding="utf-8") \
+                if res_fetch is not None else res_fetch
 
             res = res_s
             if from_json:
@@ -205,14 +222,16 @@ class TorskelServer(tornado.web.Application):
         except tornado.httpclient.HTTPError as e:
             if e.code == 599:
                 if log_timeout_exc is True:
-                    self.log_exc('http_request_get failed by timeout url = %s' % url)
+                    self.log_exc('http_request_get failed by timeout url = %s'
+                                 % url)
                 else:
                     self.log_debug('http_request_get failed by timeout')
                 res = None
 
         except Exception:
             res = None
-            self.log_exc('http_request_post failed! url = %s  body=%s ' % (url, body))
+            self.log_exc('http_request_post failed! url = %s  body=%s '
+                         % (url, body))
 
         return res
 
@@ -230,7 +249,8 @@ class TorskelServer(tornado.web.Application):
         res = None
         try:
             res_fetch = await self.http_client.fetch(url)
-            res_s = res_fetch.body.decode(encoding="utf-8") if res_fetch is not None else res_fetch
+            res_s = res_fetch.body.decode(encoding="utf-8") \
+                if res_fetch is not None else res_fetch
 
             res = res_s
             if from_json:
@@ -241,14 +261,14 @@ class TorskelServer(tornado.web.Application):
         except tornado.httpclient.HTTPError as e:
             if e.code == 599:
                 if log_timeout_exc is True:
-                    self.log_exc('http_request_get failed by timeout url = %s' % url)
+                    self.log_exc('http_request_get failed by timeout url = %s'
+                                 % url)
                 else:
                     self.log_debug('http_request_get failed by timeout')
                 res = None
         except Exception:
             self.log_exc('http_request_get failed! url = %s' % url)
             res = None
-
 
         return res
 
@@ -262,7 +282,8 @@ class TorskelServer(tornado.web.Application):
         :param loop: ioloop
 
         """
-        redis_addr = options.redis_socket if options.use_redis_socket else (options.redis_host, options.redis_port)
+        redis_addr = options.redis_socket if options.use_redis_socket \
+            else (options.redis_host, options.redis_port)
         # TODO validate redis connection params
         redis_psw = options.redis_psw
 
@@ -273,9 +294,11 @@ class TorskelServer(tornado.web.Application):
         if redis_db == -1:
             redis_db = None
 
-        self.redis_connection_pool = loop.run_until_complete(aioredis.create_pool(
-            redis_addr, password=redis_psw, db=redis_db,
-            minsize=options.redis_min_con, maxsize=options.redis_max_con))
+        self.redis_connection_pool = loop.run_until_complete(
+            aioredis.create_pool(redis_addr, password=redis_psw, db=redis_db,
+                                 minsize=options.redis_min_con,
+                                 maxsize=options.redis_max_con)
+        )
 
     async def set_redis_exp_val(self, key, val, exp=None, **kwargs):
         """
@@ -324,13 +347,15 @@ class TorskelServer(tornado.web.Application):
             redis_val = r.decode('utf-8') if r is not None else r
             if redis_val:
                 if use_json_utils and json_util:
-                    res = json.loads(redis_val, object_hook=json_util.object_hook) if from_json else redis_val
+                    res = json.loads(
+                        redis_val, object_hook=json_util.object_hook
+                    ) if from_json else redis_val
                 else:
                     res = json.loads(redis_val) if from_json else redis_val
             else:
                 res = None
             return res
-        except:
+        except Exception:
             self.log_exc('get_redis_val failed key = %s' % key)
             res = None
             return res
@@ -348,7 +373,7 @@ class TorskelServer(tornado.web.Application):
         """
         try:
             res = self.log_msg_tmpl % (grep_label, msg)
-        except:
+        except Exception:
             res = msg
         return res
 
@@ -379,8 +404,8 @@ class TorskelServer(tornado.web.Application):
         """
         self.logger.exception(self.get_log_msg(msg, grep_label))
 
-    def set_mail_logging(self, mail_host, from_addr, to_addr, subject, credentials_list=None,
-                         log_level=logging.ERROR):
+    def set_mail_logging(self, mail_host, from_addr, to_addr, subject,
+                         credentials_list=None, log_level=logging.ERROR):
         """
         Init SMTP log handler for sendig log to email
         :param mail_host: host
@@ -392,12 +417,13 @@ class TorskelServer(tornado.web.Application):
         :return:
         """
         # TODO validate mail params try catch
-        mail_logging = logging.handlers.SMTPHandler(mailhost=mail_host,
-                                                    fromaddr=from_addr,
-                                                    toaddrs=to_addr,
-                                                    subject=subject,
-                                                    credentials=credentials_list
-                                                    )
+        mail_logging = logging.handlers.SMTPHandler(
+            mailhost=mail_host,
+            fromaddr=from_addr,
+            toaddrs=to_addr,
+            subject=subject,
+            credentials=credentials_list
+        )
 
         mail_logging.setLevel(log_level)
         self.logger.addHandler(mail_logging)

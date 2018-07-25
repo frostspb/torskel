@@ -23,7 +23,7 @@ class TorskelLogMixin(object):
         """
         try:
             res = self.log_msg_tmpl % (grep_label, msg)
-        except:
+        except Exception:
             res = msg
         return res
 
@@ -54,7 +54,8 @@ class TorskelLogMixin(object):
         """
         self.logger.exception(self.get_log_msg(msg, grep_label))
 
-    def set_mail_logging(self, mail_host, from_addr, to_addr, subject, credentials_list=None, log_level=logging.ERROR):
+    def set_mail_logging(self, mail_host, from_addr, to_addr, subject,
+                         credentials_list=None, log_level=logging.ERROR):
         """
         Init SMTP log handler for sendig log to email
         :param mail_host: host
@@ -66,12 +67,13 @@ class TorskelLogMixin(object):
         :return:
         """
         # TODO validate mail params try catch
-        mail_logging = logging.handlers.SMTPHandler(mailhost=mail_host,
-                                                    fromaddr=from_addr,
-                                                    toaddrs=to_addr,
-                                                    subject=subject,
-                                                    credentials=credentials_list
-                                                    )
+        mail_logging = logging.handlers.SMTPHandler(
+            mailhost=mail_host,
+            fromaddr=from_addr,
+            toaddrs=to_addr,
+            subject=subject,
+            credentials=credentials_list
+        )
 
         mail_logging.setLevel(log_level)
         self.logger.addHandler(mail_logging)

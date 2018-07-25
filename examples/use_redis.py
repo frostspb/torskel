@@ -6,10 +6,10 @@ import tornado.web
 from tornado.options import options
 
 # You must turn on support redis option
-options.define('use_redis', default=True, help='use redis', type=bool)
-# If you are using redis without a socket file, uncomment the line below
-# options.define('use_redis_socket', default=False, help='use redis', type=bool)
 
+options.use_redis = True
+
+# If you are using redis without a socket file, set use_redis_socket = False
 
 """
 Default redis options:
@@ -22,7 +22,6 @@ If you using password for connecting to redis define redis_psw option
 Default redis db=0 for overwrite this - define option redis_db
 """
 
-options.define('redis_psw', 'redisS5ab80')
 
 class RedisApplication(TorskelServer):
     def __init__(self, handlers, **settings):
@@ -34,7 +33,8 @@ class RedisHandler(TorskelHandler):
     async def get(self):
         # get hash string
         my_key = self.get_hash_str('my_key')
-        await self.set_redis_exp_val(my_key, self.application.greeting, 3000, convert_to_json=False)
+        await self.set_redis_exp_val(my_key, self.application.greeting, 3000,
+                                     convert_to_json=False)
         res = await self.get_redis_val(my_key, from_json=False)
         self.write(res)
         await self.del_redis_val(my_key)
@@ -48,4 +48,4 @@ if __name__ == '__main__':
     loop = asyncio.get_event_loop()
     redis_app.init_with_loop(loop)
     loop.run_forever()
-    tornado.ioloop.IOLoop.instance().start()
+    tornado.ioloop.IOLoop.current().start()

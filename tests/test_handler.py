@@ -1,6 +1,6 @@
-import unittest, os, os.path, sys, urllib
+import os.path
+import sys
 
-import tornado.options
 from tornado.options import options
 from tornado.testing import AsyncHTTPTestCase
 from torskel.torskel_app import TorskelServer

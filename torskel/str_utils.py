@@ -1,11 +1,13 @@
-# -*- coding: utf-8 -*-
 import hashlib
 import re
 import pickle
 import ipaddress
 
+ALL_HASH_RE_TMPL = r"^(?:[a-fA-F\d]{32,40})$|^(?:[a-fA-F\d]{52,60})$|" \
+                   r"^(?:[a-fA-F\d]{92,100})$"
+
 hash_sha224_tmpl = re.compile(r"\b([a-f\d]{56}|[A-F\d]{56})\b")
-all_hash_tmpl = re.compile(r"^(?:[a-fA-F\d]{32,40})$|^(?:[a-fA-F\d]{52,60})$|^(?:[a-fA-F\d]{92,100})$")
+all_hash_tmpl = re.compile(ALL_HASH_RE_TMPL)
 mac_address = re.compile('^' + '[\:\-]'.join(['([0-9a-f]{2})'] * 6) + '$')
 
 
@@ -43,7 +45,8 @@ def is_valid_mac(mac):
 
 def chr_set_null(chr_value):
     """sql util function"""
-    return "null" if chr_value is None or not chr_value else ''.join(("'", chr_value, "'"))
+    return "null" if chr_value is None or not chr_value else \
+        ''.join(("'", chr_value, "'"))
 
 
 def int_set_null(int_value):
@@ -83,7 +86,7 @@ def get_hash_str(value, alg='sha224'):
     try:
         if isinstance(value, str):
             res = getattr(hashlib, alg)(value.encode('utf-8')).hexdigest()
-    except:
+    except Exception:
         pass
 
     return res

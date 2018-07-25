@@ -18,4 +18,4 @@ hello_app = HelloApplication(handlers=[(r"/", HelloHandler)])
 if __name__ == '__main__':
     hello_app.listen(8888)
 
-    tornado.ioloop.IOLoop.instance().start()
+    tornado.ioloop.IOLoop.current().start()
