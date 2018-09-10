@@ -137,3 +137,10 @@ class TorskelHandler(tornado.web.RequestHandler, TorskelLogMixin):
         """
         res = await self.application.get_redis_val(key, **kwargs)
         return res
+
+    def get_current_url(self):
+        """
+        Get current handler url
+        :return: str
+        """
+        return self.reverse_url(self.__class__.__name__)
