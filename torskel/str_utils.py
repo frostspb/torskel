@@ -1,6 +1,5 @@
 import hashlib
 import re
-import pickle
 import ipaddress
 
 ALL_HASH_RE_TMPL = r"^(?:[a-fA-F\d]{32,40})$|^(?:[a-fA-F\d]{52,60})$|" \
@@ -105,36 +104,4 @@ def is_hash_str(value):
                 res = all_hash_tmpl.match(value) is not None
             except Exception:
                 res = False
-    return res
-
-
-def pack_iters(val):
-    """
-    Packs the iterated type into a string
-    :param val:
-    :return: str
-    """
-
-    try:
-        if isinstance(val, (dict, list, tuple, enumerate)):
-            res = pickle.dumps(val)
-        else:
-            res = val
-    except pickle.PicklingError:
-        res = None
-
-    return res
-
-
-def unpack_iters(val):
-    """
-    Extracts a string into an iterated type
-    :param val:
-    :return: iter
-    """
-
-    try:
-        res = pickle.loads(val)
-    except pickle.UnpicklingError:
-        res = None
     return res
