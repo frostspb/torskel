@@ -105,3 +105,17 @@ def is_hash_str(value):
             except Exception:
                 res = False
     return res
+
+
+def is_number(value):
+    """
+    Checks whether the value is a number
+    :param value:
+    :return: bool
+    """
+    try:
+        complex(value)
+    except ValueError:
+        return False
+
+    return True
