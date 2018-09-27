@@ -4,7 +4,7 @@ except ImportError:
     json_util = False
 
 import tornado.gen
-
+from user_agents import parse
 from torskel.str_utils import get_hash_str
 from torskel.str_utils import is_hash_str
 from torskel.torskel_mixins.log_mix import TorskelLogMixin
@@ -144,3 +144,28 @@ class TorskelHandler(tornado.web.RequestHandler, TorskelLogMixin):
         :return: str
         """
         return self.reverse_url(self.__class__.__name__)
+
+    def get_user_agent(self) -> str:
+        """
+        Defines the device, OS and user browser by the User-Agent header
+        :return: str
+        """
+        try:
+            ua_string = self.request.headers["User-Agent"]
+            user_agent = str(parse(ua_string))
+        except KeyError:
+            user_agent = 'Unknown'
+        self.log_debug(user_agent, grep_label='USER_AGENT')
+        return user_agent
+
+    def get_user_lang_list(self) -> list:
+        """
+        Returns a list of the language codes configured in the client's browser
+        :return: language codes
+        """
+        try:
+            languages = self.request.headers["Accept-Language"].split(",")
+            res = [language.strip().split(";")[0][:2] for language in languages]
+        except Exception:
+            res = ['ru']
+        return res
