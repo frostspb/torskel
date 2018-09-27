@@ -20,7 +20,7 @@ setup(
     ],
     install_requires=[
         'xmltodict>=0.11.0',
-        'user-agents>=1.1.0'
+        'user-agents>=1.1.0',
         'tornado>=5.1'
 
     ],
