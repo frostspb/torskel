@@ -1,7 +1,7 @@
 from distutils.core import setup
 from setuptools import find_packages
 
-VERSION = '0.1.78'
+VERSION = '0.1.80'
 
 setup(
     name='torskel',
@@ -20,8 +20,7 @@ setup(
     ],
     install_requires=[
         'xmltodict>=0.11.0',
-        'user-agents>=1.1.0',
-        'tornado>=5.1'
+
 
     ],
 )

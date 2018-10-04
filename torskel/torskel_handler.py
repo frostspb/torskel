@@ -4,10 +4,15 @@ except ImportError:
     json_util = False
 
 import tornado.gen
+from tornado.options import options
 from user_agents import parse
 from torskel.str_utils import get_hash_str
 from torskel.str_utils import is_hash_str
 from torskel.torskel_mixins.log_mix import TorskelLogMixin
+
+
+options.define("default_local_language", default='en', type=str)
+options.define("default_international_language", default='en', type=str)
 
 
 class TorskelHandler(tornado.web.RequestHandler, TorskelLogMixin):
@@ -167,5 +172,5 @@ class TorskelHandler(tornado.web.RequestHandler, TorskelLogMixin):
             languages = self.request.headers["Accept-Language"].split(",")
             res = [language.strip().split(";")[0][:2] for language in languages]
         except Exception:
-            res = ['ru']
+            res = [options.default_local_language]
         return res
