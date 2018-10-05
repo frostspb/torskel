@@ -5,3 +5,4 @@
 /dist/*.gz
 /dist/*.whl
 /__pycache__/
+*/__pycache__/
