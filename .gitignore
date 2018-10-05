@@ -1,5 +1,7 @@
 *.pyc
 /.idea/
-
-/dist/*
+/torskel.egg-info/
 /build/*
+/dist/*.gz
+/dist/*.whl
+/__pycache__/

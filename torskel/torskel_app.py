@@ -23,6 +23,7 @@ except ImportError:
 
 try:
     from jinja2 import Environment, FileSystemLoader
+
     jinja2_import = True
 except ImportError:
     jinja2_import = False
@@ -32,20 +33,26 @@ try:
 except ImportError:
     pycurl = None
 
-
 from tornado.options import options
 from urllib.parse import urlencode
 from tornado.httpclient import AsyncHTTPClient
 from tornado.autoreload import watch
-
+from torskel.libs.db_utils.mongo import get_mongo_pool
+from torskel.libs.db_utils.mongo import bulk_mongo_insert
+from torskel.libs.str_consts import INIT_REDIS_LABEL
+from torskel.libs.event_controller import TorskelEventLogController
 
 settings = {
     # 'cookie_secret': options.secret_key,
     # 'xsrf_cookies': True,
 }
 
+# server params
 options.define('debug', default=True, help='debug mode', type=bool)
 options.define("port", default=8888, help="run on the given port", type=int)
+options.define("srv_name", 'LOCAL', help="Server verbose name", type=str)
+options.define("run_on_socket", False, help="Run on socket", type=bool)
+options.define("socket_path", None, help="Path to unix-socket", type=str)
 
 # http-client params
 options.define("max_http_clients", default=100, type=int)
@@ -62,6 +69,17 @@ options.define("log_mail_host", default='', type=str)
 options.define("log_mail_user", default='', type=str)
 options.define("log_mail_psw", default='', type=str)
 
+# mongodb params
+options.define("use_mongo", default=False, help="use mongodb", type=bool)
+options.define("mongo_server", default="localhost", type=str)
+options.define("mongo_port", default=27017, type=int)
+options.define("mongo_db_name", type=str)
+options.define("mongo_auth_db_name", default=options.mongo_db_name, type=str)
+options.define("mongo_user", type=str)
+options.define("mongo_psw", type=str)
+options.define("mongo_min_pool_size", default=5, type=int)
+options.define("mongo_max_pool_size", default=10, type=int)
+
 # redis params
 options.define('use_redis', default=False, help='use redis', type=bool)
 options.define('use_redis_socket', default=True,
@@ -77,6 +95,20 @@ options.define("redis_db", default=-1, type=int)
 # reactjs params
 options.define('use_reactjs', default=False, help='use reactjs', type=bool)
 options.define("react_assets_file", default='webpack-assets.json', type=str)
+
+# events writer params
+options.define('use_events_writer', default=False, help='use_events_writer',
+               type=bool)
+options.define('show_log_event_writer', default=False,
+               type=bool)
+options.define('use_lite_event', default=False, type=bool)
+options.define("task_list_size", default=10, type=int)
+options.define("writer_period", default=1000*10, type=int)
+options.define("events_collection_name", default='user_events', type=str)
+
+# user language settings
+options.define("default_local_language", default='en', type=str)
+options.define("default_international_language", default='en', type=str)
 
 
 class TorskelServer(tornado.web.Application):
@@ -96,9 +128,9 @@ class TorskelServer(tornado.web.Application):
         super().__init__(handlers, static_path=app_static_dir,
                          template_path=app_template_dir,
                          **settings)
-        # self.redis_connection_pool = None
+        self.server_name = options.srv_name
         self.logger = tornado.log.gen_log
-
+        self.redis_connection_pool = None
         tornado.ioloop.IOLoop.configure(
             'tornado.platform.asyncio.AsyncIOMainLoop'
         )
@@ -142,6 +174,18 @@ class TorskelServer(tornado.web.Application):
                 AsyncHTTPClient.configure(
                     "tornado.curl_httpclient.CurlAsyncHTTPClient"
                 )
+        if options.use_mongo:
+            self.mongo_pool = get_mongo_pool(options.mongo_db_name,
+                                             options.mongo_user,
+                                             options.mongo_psw,
+                                             options.mongo_auth_db_name,
+                                             options.mongo_server,
+                                             options.mongo_port,
+                                             options.mongo_min_pool_size,
+                                             options.mongo_max_pool_size)
+        else:
+            self.mongo_pool = None
+        self.event_writer = TorskelEventLogController()
 
     # ########################### #
     #  Validate params functions  #
@@ -186,6 +230,13 @@ class TorskelServer(tornado.web.Application):
                 raise ImportError('Required package aioredis is missing')
             else:
                 self.init_redis_pool(loop)
+        if options.use_events_writer:
+            self.log_info('Init events writer')
+            event_writer = tornado.ioloop.PeriodicCallback(
+                self.write_log_from_queue,
+                options.writer_period
+            )
+            event_writer.start()
 
     # ############################# #
     #  Async Http-client functions  #
@@ -293,6 +344,12 @@ class TorskelServer(tornado.web.Application):
         redis_db = options.redis_db
         if redis_db == -1:
             redis_db = None
+        self.log_info("Init Redis connection pool... ")
+        self.log_info(f"ADDR={redis_addr} DB={redis_db}",
+                      grep_label=INIT_REDIS_LABEL)
+        self.log_info(f"MIN_POOL_SIZE={options.redis_min_con} "
+                      f"MAX_POOL_SIZE={options.redis_max_con}",
+                      grep_label=INIT_REDIS_LABEL)
 
         self.redis_connection_pool = loop.run_until_complete(
             aioredis.create_pool(redis_addr, password=redis_psw, db=redis_db,
@@ -386,6 +443,15 @@ class TorskelServer(tornado.web.Application):
         """
         self.logger.debug(self.get_log_msg(msg, grep_label))
 
+    def log_info(self, msg, grep_label=''):
+        """
+        Log info message
+        :param msg: message
+        :param grep_label: label for grep
+        :return:
+        """
+        self.logger.info(self.get_log_msg(msg, grep_label))
+
     def log_err(self, msg, grep_label=''):
         """
         Log error
@@ -427,3 +493,14 @@ class TorskelServer(tornado.web.Application):
 
         mail_logging.setLevel(log_level)
         self.logger.addHandler(mail_logging)
+
+    async def write_log_from_queue(self) -> type(None):
+        """
+         Retrieves events from the queue.
+         and performs the insert into the database
+        """
+        await self.event_writer.write_log_from_queue(
+            self.mongo_pool,
+            options.events_collection_name,
+            bulk_mongo_insert
+        )

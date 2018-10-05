@@ -6,13 +6,14 @@ except ImportError:
 import tornado.gen
 from tornado.options import options
 from user_agents import parse
+from datetime import datetime
 from torskel.str_utils import get_hash_str
 from torskel.str_utils import is_hash_str
 from torskel.torskel_mixins.log_mix import TorskelLogMixin
-
-
-options.define("default_local_language", default='en', type=str)
-options.define("default_international_language", default='en', type=str)
+from torskel.libs.str_consts import EVENTS_USER_AGENT
+from torskel.libs.str_consts import EVENTS_DATE
+from torskel.libs.str_consts import EVENTS_IP, EVENTS_METHOD
+from torskel.libs.str_consts import EVENTS_URL, EVENTS_SRV_NAME
 
 
 class TorskelHandler(tornado.web.RequestHandler, TorskelLogMixin):
@@ -145,7 +146,7 @@ class TorskelHandler(tornado.web.RequestHandler, TorskelLogMixin):
 
     def get_current_url(self):
         """
-        Get current handler url
+        Get current handler url for urls named by class name
         :return: str
         """
         return self.reverse_url(self.__class__.__name__)
@@ -170,7 +171,53 @@ class TorskelHandler(tornado.web.RequestHandler, TorskelLogMixin):
         """
         try:
             languages = self.request.headers["Accept-Language"].split(",")
-            res = [language.strip().split(";")[0][:2] for language in languages]
+            res = [
+                language.strip().split(";")[0][:2] for language in languages
+            ]
         except Exception:
             res = [options.default_local_language]
+        return res
+
+    def add_log_event(self, event=None, use_legacy_event=True):
+        if event is None:
+            event = {}
+        if use_legacy_event:
+            legacy_event = self.get_event_skeleton(options.use_lite_event)
+        else:
+            legacy_event = {}
+
+        if isinstance(event, dict):
+            legacy_event.update(event)
+            compl_event = legacy_event
+        else:
+            compl_event = legacy_event
+
+        if len(compl_event) > 0:
+            self.application.event_writer.add_log_event(compl_event)
+
+    def get_event_skeleton(self, lite_event=False):
+        user_agent = self.get_user_agent()
+        url = self.request.uri
+        try:
+            user_agent = user_agent[:128]
+            url = url[:128]
+        except Exception:
+            pass
+
+        ip = self.get_user_ip()
+        res = {
+            EVENTS_DATE: datetime.now(),
+            EVENTS_USER_AGENT: user_agent,
+            EVENTS_IP: ip,
+        }
+
+        if not lite_event:
+            add_info = {
+                EVENTS_URL: url,
+                EVENTS_SRV_NAME: self.application.server_name,
+                EVENTS_METHOD: self.request.method,
+
+            }
+            res.update(add_info)
+
         return res

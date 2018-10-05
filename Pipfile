@@ -4,10 +4,11 @@ verify_ssl = true
 name = "pypi"
 
 [dev-packages]
+motor = "*"
+aioredis = "*"
 
 [packages]
 tornado = "*"
-aioredis = "*"
 xmltodict = "*"
 user-agents = "*"
 "Jinja2" = "*"
