@@ -33,6 +33,12 @@ try:
 except ImportError:
     pycurl = None
 
+try:
+    from tornado_xmlrpc.client import ServerProxy
+    xmlrpc_import = True
+except ImportError:
+    xmlrpc_import = False
+
 from tornado.options import options
 from urllib.parse import urlencode
 from tornado.httpclient import AsyncHTTPClient
@@ -53,6 +59,11 @@ options.define("port", default=8888, help="run on the given port", type=int)
 options.define("srv_name", 'LOCAL', help="Server verbose name", type=str)
 options.define("run_on_socket", False, help="Run on socket", type=bool)
 options.define("socket_path", None, help="Path to unix-socket", type=str)
+
+
+# xml-rpc
+options.define('use_xmlrpc', default=False, help='use xmlrpc client', type=bool)
+options.define("max_xmlrpc_clients", default=10, type=int)
 
 # http-client params
 options.define("max_http_clients", default=100, type=int)
@@ -175,14 +186,18 @@ class TorskelServer(tornado.web.Application):
                     "tornado.curl_httpclient.CurlAsyncHTTPClient"
                 )
         if options.use_mongo:
-            self.mongo_pool = get_mongo_pool(options.mongo_db_name,
-                                             options.mongo_user,
-                                             options.mongo_psw,
-                                             options.mongo_auth_db_name,
-                                             options.mongo_server,
-                                             options.mongo_port,
-                                             options.mongo_min_pool_size,
-                                             options.mongo_max_pool_size)
+            try:
+                self.mongo_pool = get_mongo_pool(options.mongo_db_name,
+                                                 options.mongo_user,
+                                                 options.mongo_psw,
+                                                 options.mongo_auth_db_name,
+                                                 options.mongo_server,
+                                                 options.mongo_port,
+                                                 options.mongo_min_pool_size,
+                                                 options.mongo_max_pool_size)
+            except ModuleNotFoundError:
+                self.mongo_pool = None
+                raise
         else:
             self.mongo_pool = None
         self.event_writer = TorskelEventLogController()
@@ -241,6 +256,25 @@ class TorskelServer(tornado.web.Application):
     # ############################# #
     #  Async Http-client functions  #
     # ############################# #
+    @staticmethod
+    def get_xmlrpc_server(xmlrpc_server,
+                          max_connections=options.max_xmlrpc_clients):
+        """
+        return connection to xmlrpc server
+        :param xmlrpc_server: server url
+        :param max_connections: count of max connections
+        :return: connection
+        """
+        res = None
+        if options.use_xmlrpc:
+            if not xmlrpc_import:
+                raise ImportError('Required package tornado_xmlrpc is missing!')
+            else:
+                res = ServerProxy(xmlrpc_server,
+                                  AsyncHTTPClient(max_clients=max_connections)
+                                  )
+        return res
+
     async def http_request_post(self, url, body, **kwargs):
         """
         http request. Method POST
@@ -499,8 +533,12 @@ class TorskelServer(tornado.web.Application):
          Retrieves events from the queue.
          and performs the insert into the database
         """
-        await self.event_writer.write_log_from_queue(
-            self.mongo_pool,
-            options.events_collection_name,
-            bulk_mongo_insert
-        )
+        if self.mongo_pool is None and not options.use_mongo:
+            self.log_err('Can not write event. '
+                         'Connection to database is missing!')
+        else:
+            await self.event_writer.write_log_from_queue(
+                self.mongo_pool,
+                options.events_collection_name,
+                bulk_mongo_insert
+            )
