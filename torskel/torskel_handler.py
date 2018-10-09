@@ -14,7 +14,7 @@ from torskel.libs.str_consts import EVENTS_USER_AGENT
 from torskel.libs.str_consts import EVENTS_DATE
 from torskel.libs.str_consts import EVENTS_IP, EVENTS_METHOD
 from torskel.libs.str_consts import EVENTS_URL, EVENTS_SRV_NAME
-
+from torskel.str_utils import default_json_dt
 
 class TorskelHandler(tornado.web.RequestHandler, TorskelLogMixin):
     def __init__(self, application, request, **kwargs):
@@ -221,3 +221,7 @@ class TorskelHandler(tornado.web.RequestHandler, TorskelLogMixin):
             res.update(add_info)
 
         return res
+
+    @staticmethod
+    def default_json_dt(o):
+        return default_json_dt(o)

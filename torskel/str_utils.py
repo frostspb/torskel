@@ -1,6 +1,7 @@
 import hashlib
 import re
 import ipaddress
+import datetime
 
 ALL_HASH_RE_TMPL = r"^(?:[a-fA-F\d]{32,40})$|^(?:[a-fA-F\d]{52,60})$|" \
                    r"^(?:[a-fA-F\d]{92,100})$"
@@ -8,6 +9,11 @@ ALL_HASH_RE_TMPL = r"^(?:[a-fA-F\d]{32,40})$|^(?:[a-fA-F\d]{52,60})$|" \
 hash_sha224_tmpl = re.compile(r"\b([a-f\d]{56}|[A-F\d]{56})\b")
 all_hash_tmpl = re.compile(ALL_HASH_RE_TMPL)
 mac_address = re.compile('^' + '[\:\-]'.join(['([0-9a-f]{2})'] * 6) + '$')
+
+
+def default_json_dt(o):
+    if type(o) is datetime.date or type(o) is datetime.datetime:
+        return o.isoformat()
 
 
 def is_valid_ip(ip):
