@@ -47,6 +47,7 @@ from torskel.libs.db_utils.mongo import get_mongo_pool
 from torskel.libs.db_utils.mongo import bulk_mongo_insert
 from torskel.libs.str_consts import INIT_REDIS_LABEL
 from torskel.libs.event_controller import TorskelEventLogController
+from torskel.libs.startup import server_init
 
 settings = {
     # 'cookie_secret': options.secret_key,
@@ -201,6 +202,14 @@ class TorskelServer(tornado.web.Application):
         else:
             self.mongo_pool = None
         self.event_writer = TorskelEventLogController()
+
+    def init_srv(self):
+        """
+        Initializing an application on a port or socket depending on
+         the settings
+        :return: None
+        """
+        server_init(self)
 
     # ########################### #
     #  Validate params functions  #
