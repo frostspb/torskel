@@ -49,6 +49,7 @@ from torskel.libs.str_consts import INIT_REDIS_LABEL
 from torskel.libs.event_controller import TorskelEventLogController
 from torskel.libs.startup import server_init
 
+
 settings = {
     # 'cookie_secret': options.secret_key,
     # 'xsrf_cookies': True,
@@ -126,6 +127,7 @@ options.define("default_international_language", default='en', type=str)
 class TorskelServer(tornado.web.Application):
     def __init__(self, handlers, root_dir=None, static_path=None,
                  template_path=None, create_http_client=True, **settings):
+        self.log_msg_tmpl = '%s %s'
 
         # TODO add valiate paths
         if root_dir is not None:
