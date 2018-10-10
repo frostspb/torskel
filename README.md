@@ -14,3 +14,6 @@ For CurlAsyncHTTPClient support - you need install pycurl
 For MongoDB support - you need install motor
 
 For more information see examples
+
+If you have any questions - visit https://gitter.im/torskel
+
