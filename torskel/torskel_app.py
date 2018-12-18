@@ -174,9 +174,6 @@ class TorskelServer(tornado.web.Application):
         else:
             self.react_env = self.react_assets = None
 
-        self.http_client = AsyncHTTPClient(
-            max_clients=options.max_http_clients
-        ) if create_http_client else None
         if options.use_curl_http_client:
             self.log_debug(options.use_curl_http_client,
                            grep_label='use_curl_http_client')
@@ -188,6 +185,11 @@ class TorskelServer(tornado.web.Application):
                 AsyncHTTPClient.configure(
                     "tornado.curl_httpclient.CurlAsyncHTTPClient"
                 )
+
+        self.http_client = AsyncHTTPClient(
+            max_clients=options.max_http_clients
+        ) if create_http_client else None
+
         if options.use_mongo:
             try:
                 self.mongo_pool = get_mongo_pool(options.mongo_db_name,
