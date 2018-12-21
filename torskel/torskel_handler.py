@@ -15,7 +15,7 @@ from torskel.libs.str_consts import EVENTS_DATE
 from torskel.libs.str_consts import EVENTS_IP, EVENTS_METHOD
 from torskel.libs.str_consts import EVENTS_URL, EVENTS_SRV_NAME
 from torskel.str_utils import default_json_dt
-
+from torskel.libs.auth.jwt import jwt_encode
 
 class TorskelHandler(tornado.web.RequestHandler, TorskelLogMixin):
     def __init__(self, application, request, **kwargs):
@@ -50,6 +50,11 @@ class TorskelHandler(tornado.web.RequestHandler, TorskelLogMixin):
         :return: boolean
         """
         return is_hash_str(value)
+
+    def encode_jwt_token(self, payload: dict=None):
+        if payload is None:
+            payload = {}
+        return jwt_encode(self.application.get_secret_key(), payload)
 
     def get_req_args(self, args_list=None):
         """

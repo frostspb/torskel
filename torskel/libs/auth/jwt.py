@@ -8,7 +8,7 @@ JWT_DEFAULT_OPTIONS = {
     'verify_iat': True,
     'verify_aud': False
 }
-
+DEFAULT_ALGORITM = 'HS256'
 INVALID_AUTH_HEADER = "Invalid header authorization"
 RESULT_KEY = 'result'
 MESSAGE_KEY = 'message'
@@ -33,6 +33,12 @@ def jwt_decode(token: str, secret_key: str, options: dict=None) -> dict:
 
     else:
         res[RESULT_KEY] = False
+    return res
+
+
+def jwt_encode (secret_key, payload: dict=None, algoritm: str= DEFAULT_ALGORITM):
+    res = jwt.encode(payload=payload, key=secret_key, algorithm=algoritm).decode("utf-8")
+    print('EEEEE', res)
     return res
 
 
