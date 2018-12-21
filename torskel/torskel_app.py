@@ -215,6 +215,10 @@ class TorskelServer(tornado.web.Application):
         """
         server_init(self)
 
+    @staticmethod
+    def get_secret_key():
+        return options.secret_key
+
     # ########################### #
     #  Validate params functions  #
     # ########################### #

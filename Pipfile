@@ -12,6 +12,8 @@ tornado = "*"
 xmltodict = "*"
 user-agents = "*"
 "Jinja2" = "*"
+pyjwt = "*"
+python-jwt = "*"
 
 [requires]
 python_version = "3.7"

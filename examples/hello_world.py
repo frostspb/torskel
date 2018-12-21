@@ -14,5 +14,5 @@ class HelloHandler(TorskelHandler):
 hello_app = TorskelServer(handlers=[(r"/", HelloHandler)])
 
 if __name__ == '__main__':
-    hello_app.listen(8888)
+    hello_app.init_srv()
     tornado.ioloop.IOLoop.current().start()
