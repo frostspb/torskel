@@ -1,9 +1,9 @@
+import datetime
 import tornado.web
+
+from tornado.options import options
 from torskel.torskel_app import TorskelServer
 from torskel.torskel_handler import TorskelHandler
-import jwt
-from tornado.options import options
-from torskel.libs.auth.jwt import jwtauth
 from torskel.torskel_secured_handler import TorskelSecuredHandler
 
 options.define("secret_key", "#MY_SeCrEt_KEy",
@@ -21,12 +21,18 @@ class HelloJwtLoginHandler(TorskelHandler):
         user = self.get_argument('username')
         psw = self.get_argument('username')
         if await self.check_passwd(user, psw):
-            encoded = self.encode_jwt_token({'username': user})
+            encoded = self.encode_jwt_token(
+                {
+                    'username': user,
+                    'exp': datetime.datetime.utcnow() + datetime.timedelta(seconds=120)
+                }
+            )
             response = {'access': encoded}
             self.set_header('Content-Type', 'application/javascript')
             self.write(response)
             self.finish()
         else:
+
             raise tornado.web.HTTPError(403, 'invalid username')
 
 

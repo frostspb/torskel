@@ -26,7 +26,8 @@ def jwt_decode(token: str, secret_key: str, options: dict=None) -> dict:
     if options is None:
         options = JWT_DEFAULT_OPTIONS
         try:
-            res = jwt.decode(token, secret_key, options=options)
+
+            res.update(jwt.decode(token, secret_key, options=options))
         except Exception:
             logger.exception('jwt_decode failed')
             res[RESULT_KEY] = False
@@ -37,8 +38,8 @@ def jwt_decode(token: str, secret_key: str, options: dict=None) -> dict:
 
 
 def jwt_encode (secret_key, payload: dict=None, algoritm: str= DEFAULT_ALGORITM):
-    res = jwt.encode(payload=payload, key=secret_key, algorithm=algoritm).decode("utf-8")
-    print('EEEEE', res)
+    res = jwt.encode(payload=payload, key=secret_key, algorithm=algoritm,
+                     ).decode("utf-8")
     return res
 
 
@@ -77,7 +78,22 @@ def jwtauth(handler_class):
             if token_validation_res.get(RESULT_KEY, False):
 
                 token = token_validation_res.get(TOKEN_KEY)
-                res = jwt_decode(token, handler.application.get_secret_key())
+                try:
+
+                    res = jwt_decode(token, handler.application.get_secret_key())
+
+                    if not res.get(RESULT_KEY):
+                        handler._transforms = []
+                        handler.set_status(401)
+                        handler.write("Missing authorization")
+                        handler.finish()
+
+                except Exception:
+
+                    handler._transforms = []
+                    handler.set_status(401)
+                    handler.write("Missing authorization")
+                    handler.finish()
 
             else:
                 handler._transforms = []
