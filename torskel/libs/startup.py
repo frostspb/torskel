@@ -18,8 +18,8 @@ def server_init(server):
         unix_socket = bind_unix_socket(options.socket_path, 0o666)
         http_server = HTTPServer(server)
         http_server.add_socket(unix_socket)
-        server.log_debug(f'Running on socket {options.socket_path}')
+        server.log_info(f'Running on socket {options.socket_path}')
     else:
 
-        server.log_debug(f'Running on port {options.port}')
+        server.log_info(f'Running on port {options.port}')
         server.listen(options.port)
