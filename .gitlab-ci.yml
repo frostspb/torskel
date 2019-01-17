@@ -24,6 +24,7 @@ build_prod:
     - rm -rf ./dist/*
     - rm -rf ./build/*
     - source $TORSKEL_ENV && python3 setup.py sdist bdist_wheel
+    - ls ./dist
 
   only:
   - master
