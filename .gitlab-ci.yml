@@ -8,6 +8,7 @@ stages:
 lint:
   stage: lint
   script: echo "Running linter"
+    - source $TORSKEL_ENV && flake8
 
 test:
   stage: test

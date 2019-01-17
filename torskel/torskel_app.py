@@ -64,7 +64,9 @@ options.define("socket_path", None, help="Path to unix-socket", type=str)
 
 
 # xml-rpc
-options.define('use_xmlrpc', default=False, help='use xmlrpc client', type=bool)
+options.define(
+    'use_xmlrpc', default=False, help='use xmlrpc client', type=bool
+)
 options.define("max_xmlrpc_clients", default=10, type=int)
 
 # http-client params
@@ -157,9 +159,13 @@ class TorskelServer(tornado.web.Application):
                     options.log_mail_user, options.log_mail_psw
                 ]
 
-            self.set_mail_logging(options.log_mail_host, options.log_mail_from,
-                                  options.log_mail_to,
-                                  options.log_mail_subj, credentials_list)
+            self.set_mail_logging(
+                options.log_mail_host,
+                options.log_mail_from,
+                options.log_mail_to,
+                options.log_mail_subj,
+                credentials_list
+            )
 
         if options.use_reactjs:
             if not jinja2_import:
@@ -285,7 +291,9 @@ class TorskelServer(tornado.web.Application):
         res = None
         if options.use_xmlrpc:
             if not xmlrpc_import:
-                raise ImportError('Required package tornado_xmlrpc is missing!')
+                raise ImportError(
+                    'Required package tornado_xmlrpc is missing!'
+                )
             else:
                 res = ServerProxy(xmlrpc_server,
                                   AsyncHTTPClient(max_clients=max_connections)
