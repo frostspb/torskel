@@ -1,0 +1,27 @@
+stages:
+  - lint
+  - test
+  - build
+  - upload
+
+
+lint:
+  stage: lint
+  script: echo "Running linter"
+
+test:
+  stage: test
+  script: echo "Running tests"
+
+build_prod:
+  stage: build
+  script:
+    - echo "Building production package"
+    - pwd
+
+
+  only:
+  - master
+
+
+
