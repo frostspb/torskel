@@ -32,6 +32,7 @@ upload_prod:
   stage: upload
   script:
     - echo "Uploading..."
+    - ls
     - twine upload  dist/*
 
 
