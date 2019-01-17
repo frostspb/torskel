@@ -9,7 +9,9 @@ lint:
   stage: lint
   script:
     - echo "Running linter"
-    - source $TORSKEL_ENV &&  ls && flake8
+    - source $TORSKEL_ENV && cd ./torskel && flake8
+
+
 
 test:
   stage: test
@@ -20,7 +22,8 @@ build_prod:
   stage: build
   script:
     - echo "Building production package"
-    - pwd
+    - rm -rf ./dist/*
+    - rm -rf ./build/*
 
 
   only:

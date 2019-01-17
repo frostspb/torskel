@@ -24,7 +24,9 @@ class HelloJwtLoginHandler(TorskelHandler):
             encoded = self.encode_jwt_token(
                 {
                     'username': user,
-                    'exp': datetime.datetime.utcnow() + datetime.timedelta(seconds=120)
+                    'exp': datetime.datetime.utcnow() + datetime.timedelta(
+                        seconds=120
+                    )
                 }
             )
             response = {'access': encoded}

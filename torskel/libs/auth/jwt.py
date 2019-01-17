@@ -21,7 +21,7 @@ AUTH_RES_GOOD = {RESULT_KEY: True, MESSAGE_KEY: ''}
 logger = tornado.log.gen_log
 
 
-def jwt_decode(token: str, secret_key: str, options: dict=None) -> dict:
+def jwt_decode(token: str, secret_key: str, options: dict = None) -> dict:
     res = {RESULT_KEY: True, MESSAGE_KEY: ''}
     if options is None:
         options = JWT_DEFAULT_OPTIONS
@@ -37,7 +37,8 @@ def jwt_decode(token: str, secret_key: str, options: dict=None) -> dict:
     return res
 
 
-def jwt_encode (secret_key, payload: dict=None, algoritm: str= DEFAULT_ALGORITM):
+def jwt_encode(secret_key, payload: dict = None,
+               algoritm: str = DEFAULT_ALGORITM):
     res = jwt.encode(payload=payload, key=secret_key, algorithm=algoritm,
                      ).decode("utf-8")
     return res
@@ -80,7 +81,9 @@ def jwtauth(handler_class):
                 token = token_validation_res.get(TOKEN_KEY)
                 try:
 
-                    res = jwt_decode(token, handler.application.get_secret_key())
+                    res = jwt_decode(
+                        token, handler.application.get_secret_key()
+                    )
 
                     if not res.get(RESULT_KEY):
                         handler._transforms = []

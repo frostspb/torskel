@@ -12,11 +12,12 @@ from torskel.libs.str_consts import INIT_MONGO_LABEL
 logger = tornado.log.gen_log
 
 
-def get_mongo_pool(mongo_db_name: str=None, mongo_user: str=None,
-                   mongo_psw: str=None, mongo_auth_db_name: str=None,
-                   mongo_server: str='localhost', mongo_port: int=27017,
-                   mongo_min_pool_size: int=5, mongo_max_pool_size: int=10,
-                   con_str: str=None, db_name: str=None):
+def get_mongo_pool(mongo_db_name: str = None, mongo_user: str = None,
+                   mongo_psw: str = None, mongo_auth_db_name: str = None,
+                   mongo_server: str = 'localhost', mongo_port: int = 27017,
+                   mongo_min_pool_size: int = 5,
+                   mongo_max_pool_size: int = 10,
+                   con_str: str = None, db_name: str = None):
     if motor_import:
         logger.info('Init MongoDB pool...')
         if con_str is None:
