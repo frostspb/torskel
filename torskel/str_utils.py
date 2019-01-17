@@ -8,7 +8,7 @@ ALL_HASH_RE_TMPL = r"^(?:[a-fA-F\d]{32,40})$|^(?:[a-fA-F\d]{52,60})$|" \
 
 hash_sha224_tmpl = re.compile(r"\b([a-f\d]{56}|[A-F\d]{56})\b")
 all_hash_tmpl = re.compile(ALL_HASH_RE_TMPL)
-mac_address = re.compile('^' + '[\:\-]'.join(['([0-9a-f]{2})'] * 6) + '$')
+mac_address = re.compile('^' + r'[\:\-]'.join(['([0-9a-f]{2})'] * 6) + '$')
 
 
 def default_json_dt(o):

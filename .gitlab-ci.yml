@@ -12,7 +12,6 @@ lint:
     - source $TORSKEL_ENV && cd ./torskel && flake8
 
 
-
 test:
   stage: test
   script:
@@ -24,10 +23,16 @@ build_prod:
     - echo "Building production package"
     - rm -rf ./dist/*
     - rm -rf ./build/*
-
+    - source $TORSKEL_ENV && python3 setup.py sdist bdist_wheel
 
   only:
   - master
+
+upload_prod:
+  stage: upload
+  script:
+    - echo "Uploading..."
+    - twine upload  dist/*
 
 
 
