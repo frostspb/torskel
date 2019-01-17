@@ -7,13 +7,14 @@ stages:
 
 lint:
   stage: lint
-  script: echo "Running linter"
-
+  script:
+    - echo "Running linter"
     - source $TORSKEL_ENV &&  ls && flake8
 
 test:
   stage: test
-  script: echo "Running tests"
+  script:
+    - echo "Running tests"
 
 build_prod:
   stage: build
