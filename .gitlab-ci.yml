@@ -33,7 +33,7 @@ upload_prod:
   script:
     - echo "Uploading..."
     - ls
-    - twine upload  dist/*
+    - twine upload  ./dist/*
 
 
 
