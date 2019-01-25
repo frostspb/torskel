@@ -11,8 +11,8 @@ setup(
     license='MIT',
     author='Frostspb',
     description='Python package with skeleton of the base Tornado application',
-    long_description="""Contains basic functions for logging, asynchronous redis,
-    support for reactJS and asynchronous http request 
+    long_description="""Contains basic functions for logging,
+    asynchronous redis, support for reactJS and asynchronous http request
     Only Python 3.7+""",
     keywords=["tornado"],
     classifiers=[
