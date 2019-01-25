@@ -1,10 +1,19 @@
+"""
+Module with basic tornado application class
+"""
 import json
 import os.path
 import logging.handlers
+from urllib.parse import urlencode
 import tornado.log
 import tornado.web
-import xmltodict
 import tornado.httpclient
+from tornado.options import options
+
+from tornado.httpclient import AsyncHTTPClient
+from tornado.autoreload import watch
+import xmltodict
+
 
 try:
     from bson import json_util
@@ -39,21 +48,13 @@ try:
 except ImportError:
     xmlrpc_import = False
 
-from tornado.options import options
-from urllib.parse import urlencode
-from tornado.httpclient import AsyncHTTPClient
-from tornado.autoreload import watch
+
 from torskel.libs.db_utils.mongo import get_mongo_pool
 from torskel.libs.db_utils.mongo import bulk_mongo_insert
 from torskel.libs.str_consts import INIT_REDIS_LABEL
 from torskel.libs.event_controller import TorskelEventLogController
 from torskel.libs.startup import server_init
 
-
-settings = {
-    # 'cookie_secret': options.secret_key,
-    # 'xsrf_cookies': True,
-}
 
 # server params
 options.define('debug', default=True, help='debug mode', type=bool)
@@ -127,6 +128,10 @@ options.define("default_international_language", default='en', type=str)
 
 
 class TorskelServer(tornado.web.Application):
+    """
+    Base class of tornado application. Contains methods for work with redis,
+    mongoDB and etc
+    """
     def __init__(self, handlers, root_dir=None, static_path=None,
                  template_path=None, create_http_client=True, **settings):
         self.log_msg_tmpl = '%s %s'
@@ -152,20 +157,7 @@ class TorskelServer(tornado.web.Application):
         )
 
         if options.use_mail_logging:
-            if options.log_mail_user == '' and options.log_mail_psw == '':
-                credentials_list = None
-            else:
-                credentials_list = [
-                    options.log_mail_user, options.log_mail_psw
-                ]
-
-            self.set_mail_logging(
-                options.log_mail_host,
-                options.log_mail_from,
-                options.log_mail_to,
-                options.log_mail_subj,
-                credentials_list
-            )
+            self._set_mail_logging()
 
         if options.use_reactjs:
             if not jinja2_import:
@@ -222,22 +214,38 @@ class TorskelServer(tornado.web.Application):
         server_init(self)
 
     @staticmethod
-    def get_secret_key():
+    def get_secret_key() -> str:
+        """
+        Return secret key from options
+        :return: str
+        """
         return options.secret_key
 
     # ########################### #
     #  Validate params functions  #
     # ########################### #
     @staticmethod
-    def validate_options():
+    def _validate_options() -> bool:
+        """
+        Skeleton for validating options
+        :return: bool
+        """
         return True
 
     @staticmethod
-    def validate_path():
+    def _validate_path() -> bool:
+        """
+        Skeleton for validating paths
+        :return: bool
+        """
         return True
 
     @staticmethod
-    def validate_mail_params():
+    def _validate_mail_params() -> bool:
+        """
+        Skeleton for validating email
+        :return: bool
+        """
         return True
 
     # ######################## #
@@ -246,11 +254,15 @@ class TorskelServer(tornado.web.Application):
 
     @staticmethod
     def load_react_assets():
+        """
+        Loading JavaScript assets
+        :return:
+        """
         try:
-            fn = options.react_assets_file
-            with open(fn) as f:
-                watch(fn)
-                assets = json.load(f)
+            file_name = options.react_assets_file
+            with open(file_name) as assets_file:
+                watch(file_name)
+                assets = json.load(assets_file)
         except IOError:
             assets = None
         except KeyError:
@@ -262,6 +274,11 @@ class TorskelServer(tornado.web.Application):
     # ################# #
 
     def init_with_loop(self, loop=None):
+        """
+        Initialization with loop
+        :param loop:
+        :return:
+        """
         if options.use_redis:
             # check aioredis lib
             if aioredis is None:
@@ -329,8 +346,8 @@ class TorskelServer(tornado.web.Application):
                 res = json.loads(res_s)
             if from_xml:
                 res = json.loads(json.dumps(xmltodict.parse(res_s)))
-        except tornado.httpclient.HTTPError as e:
-            if e.code == 599:
+        except tornado.httpclient.HTTPError as exception:
+            if exception.code == 599:
                 if log_timeout_exc is True:
                     self.log_exc('http_request_get failed by timeout url = %s'
                                  % url)
@@ -368,8 +385,8 @@ class TorskelServer(tornado.web.Application):
 
             if from_xml:
                 res = json.loads(json.dumps(xmltodict.parse(res_s)))
-        except tornado.httpclient.HTTPError as e:
-            if e.code == 599:
+        except tornado.httpclient.HTTPError as exception:
+            if exception.code == 599:
                 if log_timeout_exc is True:
                     self.log_exc('http_request_get failed by timeout url = %s'
                                  % url)
@@ -459,8 +476,8 @@ class TorskelServer(tornado.web.Application):
             from_json = kwargs.get('from_json', False)
             use_json_utils = kwargs.get('use_json_utils', False)
 
-            r = await self.redis_connection_pool.execute('get', key)
-            redis_val = r.decode('utf-8') if r is not None else r
+            val = await self.redis_connection_pool.execute('get', key)
+            redis_val = val.decode('utf-8') if val is not None else val
             if redis_val:
                 if use_json_utils and json_util:
                     res = json.loads(
@@ -480,7 +497,7 @@ class TorskelServer(tornado.web.Application):
     #  Logging functions  #
     # ################### #
 
-    def get_log_msg(self, msg, grep_label=''):
+    def _get_log_msg(self, msg, grep_label=''):
         """
         Make message by template
         :param msg: message
@@ -500,7 +517,7 @@ class TorskelServer(tornado.web.Application):
         :param grep_label: label for grep
         :return:
         """
-        self.logger.debug(self.get_log_msg(msg, grep_label))
+        self.logger.debug(self._get_log_msg(msg, grep_label))
 
     def log_info(self, msg, grep_label=''):
         """
@@ -509,7 +526,7 @@ class TorskelServer(tornado.web.Application):
         :param grep_label: label for grep
         :return:
         """
-        self.logger.info(self.get_log_msg(msg, grep_label))
+        self.logger.info(self._get_log_msg(msg, grep_label))
 
     def log_err(self, msg, grep_label=''):
         """
@@ -518,7 +535,7 @@ class TorskelServer(tornado.web.Application):
         :param grep_label: label for grep
         :return:
         """
-        self.logger.error(self.get_log_msg(msg, grep_label))
+        self.logger.error(self._get_log_msg(msg, grep_label))
 
     def log_exc(self, msg, grep_label=''):
         """
@@ -527,26 +544,28 @@ class TorskelServer(tornado.web.Application):
         :param grep_label: label for grep
         :return:
         """
-        self.logger.exception(self.get_log_msg(msg, grep_label))
+        self.logger.exception(self._get_log_msg(msg, grep_label))
 
-    def set_mail_logging(self, mail_host, from_addr, to_addr, subject,
-                         credentials_list=None, log_level=logging.ERROR):
+    def _set_mail_logging(self, log_level=logging.ERROR):
         """
         Init SMTP log handler for sendig log to email
-        :param mail_host: host
-        :param from_addr: from
-        :param to_addr: to
-        :param subject: subject
-        :param credentials_list: (login, password)
         :param log_level: log level
         :return:
+
         """
+        if options.log_mail_user == '' and options.log_mail_psw == '':
+            credentials_list = None
+        else:
+            credentials_list = [
+                options.log_mail_user, options.log_mail_psw
+            ]
+
         # TODO validate mail params try catch
         mail_logging = logging.handlers.SMTPHandler(
-            mailhost=mail_host,
-            fromaddr=from_addr,
-            toaddrs=to_addr,
-            subject=subject,
+            mailhost=options.log_mail_host,
+            fromaddr=options.log_mail_from,
+            toaddrs=options.log_mail_to,
+            subject=options.log_mail_subj,
             credentials=credentials_list
         )
 
