@@ -1,12 +1,14 @@
-try:
-    from bson import json_util
-except ImportError:
-    json_util = False
+"""
+Module with RequestHandler
+"""
 
-import tornado.gen
-from tornado.options import options
-from user_agents import parse
+# pylint: disable=W0511
+
 from datetime import datetime
+from user_agents import parse
+
+from tornado.options import options
+from tornado.web import RequestHandler
 from torskel.str_utils import get_hash_str
 from torskel.str_utils import is_hash_str
 from torskel.torskel_mixins.log_mix import TorskelLogMixin
@@ -18,20 +20,18 @@ from torskel.str_utils import default_json_dt
 from torskel.libs.auth.jwt import jwt_encode
 
 
-class TorskelHandler(tornado.web.RequestHandler, TorskelLogMixin):
+# pylint: disable=W0223
+class TorskelHandler(RequestHandler, TorskelLogMixin):
+    """
+    Request Handler class
+    """
     def __init__(self, application, request, **kwargs):
         super(TorskelHandler, self).__init__(application, request, **kwargs)
         # filter dict by list of keys
+        # pylint: disable=R1717
         self.filter_dict = lambda x, y: dict(
             [(i, x[i]) for i in x if i in set(y)]
         )
-
-    def react_render(self, template_name, render_data_dict=None):
-        if render_data_dict is None:
-            render_data_dict = {}
-        template = self.application.react_env.get_template(template_name)
-        render_data_dict.update({'assets': self.application.react_assets})
-        return self.write(template.render(render_data_dict))
 
     @staticmethod
     def get_hash_str(value, alg='sha224'):
@@ -53,6 +53,11 @@ class TorskelHandler(tornado.web.RequestHandler, TorskelLogMixin):
         return is_hash_str(value)
 
     def encode_jwt_token(self, payload: dict = None):
+        """
+        Encode JWT token from payload
+        :param payload:
+        :return:
+        """
         if payload is None:
             payload = {}
         return jwt_encode(self.application.get_secret_key(), payload)
@@ -121,7 +126,7 @@ class TorskelHandler(tornado.web.RequestHandler, TorskelLogMixin):
         return await self.application.http_request_post(url, body, **kwargs)
 
     # TODO refact add params to kwargs
-    async def set_redis_exp_val(self, key, val, exp, **kwargs):
+    async def set_redis_exp_val(self, key, val, exp=None, **kwargs):
         """
         Write value to redis
         :param key: key
@@ -181,11 +186,19 @@ class TorskelHandler(tornado.web.RequestHandler, TorskelLogMixin):
             res = [
                 language.strip().split(";")[0][:2] for language in languages
             ]
-        except Exception:
+        except TypeError:
+            res = [options.default_local_language]
+        except IndexError:
             res = [options.default_local_language]
         return res
 
     def add_log_event(self, event=None, use_legacy_event=True):
+        """
+        Add event into LOgWriter queue
+        :param event:
+        :param use_legacy_event:
+        :return:
+        """
         if event is None:
             event = {}
         if use_legacy_event:
@@ -199,18 +212,24 @@ class TorskelHandler(tornado.web.RequestHandler, TorskelLogMixin):
         else:
             compl_event = legacy_event
 
-        if len(compl_event) > 0:
+        if compl_event:
             self.application.event_writer.add_log_event(compl_event)
 
     def get_event_skeleton(self, lite_event=False):
+        """
+        Returns skeleton of event for logging
+        :param lite_event: flag for using lite event dict
+        :return: dict
+        """
         user_agent = self.get_user_agent()
         url = self.request.uri
         try:
             user_agent = user_agent[:128]
             url = url[:128]
-        except Exception:
+        except TypeError:
             pass
 
+        # pylint: disable=C0103
         ip = self.get_user_ip()
         res = {
             EVENTS_DATE: datetime.now(),
@@ -230,5 +249,10 @@ class TorskelHandler(tornado.web.RequestHandler, TorskelLogMixin):
         return res
 
     @staticmethod
-    def default_json_dt(o):
-        return default_json_dt(o)
+    def default_json_dt(json_object):
+        """
+        Returns hook for formatting date in JSON
+        :param o:
+        :return:
+        """
+        return default_json_dt(json_object)

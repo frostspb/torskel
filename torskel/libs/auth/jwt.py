@@ -1,3 +1,7 @@
+"""
+Module with JWT functionality
+"""
+
 import jwt
 import tornado.log
 
@@ -18,10 +22,17 @@ AUTH_RES_FAIL = {RESULT_KEY: False, MESSAGE_KEY: INVALID_AUTH_HEADER}
 AUTH_RES_GOOD = {RESULT_KEY: True, MESSAGE_KEY: ''}
 
 
-logger = tornado.log.gen_log
+logger = tornado.log.gen_log  # pylint: disable=C0103
 
 
 def jwt_decode(token: str, secret_key: str, options: dict = None) -> dict:
+    """
+    Decode JWT token
+    :param token:
+    :param secret_key:
+    :param options:
+    :return:
+    """
     res = {RESULT_KEY: True, MESSAGE_KEY: ''}
     if options is None:
         options = JWT_DEFAULT_OPTIONS

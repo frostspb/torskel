@@ -1,8 +1,11 @@
 """
 Module with basic tornado application class
 """
+
+# pylint: disable=W0511
 import json
 import os.path
+import importlib
 import logging.handlers
 from urllib.parse import urlencode
 import tornado.log
@@ -14,25 +17,11 @@ from tornado.httpclient import AsyncHTTPClient
 import xmltodict
 
 from torskel.torskel_mixins.redis_mixin import RedisApplicationMixin
-
-try:
-    import pycurl
-except ImportError:
-    pycurl = None
-
-try:
-    from tornado_xmlrpc.client import ServerProxy
-    xmlrpc_import = True
-except ImportError:
-    xmlrpc_import = False
-
-
 from torskel.libs.db_utils.mongo import get_mongo_pool
 from torskel.libs.db_utils.mongo import bulk_mongo_insert
 from torskel.libs.str_consts import INIT_REDIS_LABEL
 from torskel.libs.event_controller import TorskelEventLogController
 from torskel.libs.startup import server_init
-
 
 # server params
 options.define('debug', default=True, help='debug mode', type=bool)
@@ -107,10 +96,11 @@ class TorskelServer(tornado.web.Application, RedisApplicationMixin):
     mongoDB and etc
     """
     def __init__(self, handlers, root_dir=None, static_path=None,
-                 template_path=None, create_http_client=True, **settings):
+                 template_path=None, **settings):
         self.log_msg_tmpl = '%s %s'
 
         # TODO add valiate paths
+        create_http_client = settings.get('create_http_client', True)
         if root_dir is not None:
             app_static_dir = os.path.join(root_dir, "static") \
                 if static_path is None else static_path
@@ -136,14 +126,14 @@ class TorskelServer(tornado.web.Application, RedisApplicationMixin):
         if options.use_curl_http_client:
             self.log_debug(options.use_curl_http_client,
                            grep_label='use_curl_http_client')
-            if pycurl is None:
-                raise ImportError('Required package for pycurl '
-                                  'CurlAsyncHTTPClient  is missing')
-            else:
-                self.log_debug('configure curl')
+            try:
+                importlib.import_module('pycurl')
                 AsyncHTTPClient.configure(
                     "tornado.curl_httpclient.CurlAsyncHTTPClient"
                 )
+            except ImportError:
+                raise ImportError('Required package for CurlAsyncHTTPClient '
+                                  'pycurl is missing')
 
         self.http_client = AsyncHTTPClient(
             max_clients=options.max_http_clients
@@ -151,14 +141,16 @@ class TorskelServer(tornado.web.Application, RedisApplicationMixin):
 
         if options.use_mongo:
             try:
-                self.mongo_pool = get_mongo_pool(options.mongo_db_name,
-                                                 options.mongo_user,
-                                                 options.mongo_psw,
-                                                 options.mongo_auth_db_name,
-                                                 options.mongo_server,
-                                                 options.mongo_port,
-                                                 options.mongo_min_pool_size,
-                                                 options.mongo_max_pool_size)
+                self.mongo_pool = get_mongo_pool(
+                    mongo_db_name=options.mongo_db_name,
+                    mongo_user=options.mongo_user,
+                    mongo_psw=options.mongo_psw,
+                    mongo_auth_db_name=options.mongo_auth_db_name,
+                    mongo_server=options.mongo_server,
+                    mongo_port=options.mongo_port,
+                    mongo_min_pool_size=options.mongo_min_pool_size,
+                    mongo_max_pool_size=options.mongo_max_pool_size
+                )
             except ModuleNotFoundError:
                 self.mongo_pool = None
                 raise
@@ -220,7 +212,6 @@ class TorskelServer(tornado.web.Application, RedisApplicationMixin):
         :return:
         """
         if options.use_redis:
-            # check aioredis lib
             self.log_info("Init Redis connection pool... ")
             self.log_info(f"ADDR={self.redis_addr} DB={self.redis_db}",
                           grep_label=INIT_REDIS_LABEL)
@@ -250,14 +241,17 @@ class TorskelServer(tornado.web.Application, RedisApplicationMixin):
         """
         res = None
         if options.use_xmlrpc:
-            if not xmlrpc_import:
+            try:
+                tornado_xmlrpc = importlib.import_module('tornado_xmlrpc')
+                res = tornado_xmlrpc.client.ServerProxy(
+                    xmlrpc_server,
+                    AsyncHTTPClient(max_clients=max_connections)
+                )
+            except ImportError:
                 raise ImportError(
                     'Required package tornado_xmlrpc is missing!'
                 )
-            else:
-                res = ServerProxy(xmlrpc_server,
-                                  AsyncHTTPClient(max_clients=max_connections)
-                                  )
+
         return res
 
     async def http_request_post(self, url, body, **kwargs):
@@ -266,11 +260,13 @@ class TorskelServer(tornado.web.Application, RedisApplicationMixin):
         :param url: url
         :param body: dict with POST-params
         param from_json: boolean, convert response to dict
+        none_if_err return None if failed request, default True
         :return: response
         """
         from_json = kwargs.get('from_json', False)
         from_xml = kwargs.get('from_xml', False)
         log_timeout_exc = kwargs.get('log_timeout_exc', True)
+        none_if_err = kwargs.get('none_if_err', True)
         self.log_debug(log_timeout_exc, grep_label='log_timeout_exc')
         res = None
         try:
@@ -296,12 +292,8 @@ class TorskelServer(tornado.web.Application, RedisApplicationMixin):
                                  % url)
                 else:
                     self.log_debug('http_request_get failed by timeout')
+            if none_if_err:
                 res = None
-
-        except Exception:
-            res = None
-            self.log_exc('http_request_post failed! url = %s  body=%s '
-                         % (url, body))
 
         return res
 
@@ -310,11 +302,13 @@ class TorskelServer(tornado.web.Application, RedisApplicationMixin):
         http request. Method GET
         :param url: url
         param from_json: boolean, convert response to dict
+        none_if_err return None if failed request, default True
         :return: response
         """
         from_json = kwargs.get('from_json', False)
         from_xml = kwargs.get('from_xml', False)
         log_timeout_exc = kwargs.get('log_timeout_exc', True)
+        none_if_err = kwargs.get('none_if_err', True)
         self.log_debug(log_timeout_exc, grep_label='log_timeout_exc')
         res = None
         try:
@@ -335,10 +329,8 @@ class TorskelServer(tornado.web.Application, RedisApplicationMixin):
                                  % url)
                 else:
                     self.log_debug('http_request_get failed by timeout')
+            if none_if_err:
                 res = None
-        except Exception:
-            self.log_exc('http_request_get failed! url = %s' % url)
-            res = None
 
         return res
 
@@ -355,7 +347,7 @@ class TorskelServer(tornado.web.Application, RedisApplicationMixin):
         """
         try:
             res = self.log_msg_tmpl % (grep_label, msg)
-        except Exception:
+        except TypeError:
             res = msg
         return res
 

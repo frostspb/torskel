@@ -1,3 +1,6 @@
+"""
+Module with useful string functions
+"""
 import hashlib
 import re
 import ipaddress
@@ -11,11 +14,13 @@ all_hash_tmpl = re.compile(ALL_HASH_RE_TMPL)
 mac_address = re.compile('^' + r'[\:\-]'.join(['([0-9a-f]{2})'] * 6) + '$')
 
 
-def default_json_dt(o):
-    if type(o) is datetime.date or type(o) is datetime.datetime:
-        return o.isoformat()
+def default_json_dt(json_object):
+    if type(json_object) is datetime.date \
+            or type(json_object) is datetime.datetime:
+        return json_object.isoformat()
 
 
+# pylint: disable=C0103
 def is_valid_ip(ip):
     """
     Validate ip address
@@ -32,6 +37,7 @@ def is_valid_ip(ip):
     return res
 
 
+# pylint: disable=C0103
 def is_valid_mac(mac):
     """
     Validate mac address

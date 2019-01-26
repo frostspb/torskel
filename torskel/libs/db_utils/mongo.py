@@ -1,24 +1,36 @@
-
+"""
+Module contains functions for mongodb
+"""
+import importlib
 import tornado.log
-try:
-    import motor.motor_tornado
-    motor_import = True
-except ImportError:
-    motor_import = False
-
 
 from torskel.libs.str_consts import INIT_MONGO_LABEL
 
+
+# pylint: disable=C0103
 logger = tornado.log.gen_log
 
 
-def get_mongo_pool(mongo_db_name: str = None, mongo_user: str = None,
-                   mongo_psw: str = None, mongo_auth_db_name: str = None,
-                   mongo_server: str = 'localhost', mongo_port: int = 27017,
-                   mongo_min_pool_size: int = 5,
-                   mongo_max_pool_size: int = 10,
-                   con_str: str = None, db_name: str = None):
-    if motor_import:
+# pylint: disable=W1203
+def get_mongo_pool(**kwargs):
+    """
+    Create connections pool to mongo
+    :param kwargs:
+    :return:
+    """
+    mongo_db_name = kwargs.get('mongo_db_name', None)
+    mongo_user = kwargs.get('mongo_user', None)
+    mongo_psw = kwargs.get('mongo_psw', None)
+    mongo_auth_db_name = kwargs.get('mongo_auth_db_name', None)
+    mongo_server = kwargs.get('mongo_server', 'localhost')
+    mongo_port = kwargs.get('mongo_port', 27017)
+    mongo_min_pool_size = kwargs.get('mongo_min_pool_size', 5)
+    mongo_max_pool_size = kwargs.get('mongo_max_pool_size', 10)
+    con_str = kwargs.get('con_str', None)
+    db_name = kwargs.get('db_name', None)
+
+    try:
+        motor = importlib.import_module('motor')
         logger.info('Init MongoDB pool...')
         if con_str is None:
             logger.info(f'[{INIT_MONGO_LABEL}] MONGO_SRV={mongo_server} '
@@ -50,10 +62,17 @@ def get_mongo_pool(mongo_db_name: str = None, mongo_user: str = None,
                 res = motor.motor_tornado.MotorClient(con_str)[db_name]
             else:
                 res = None
-    else:
+    except ImportError:
         raise ModuleNotFoundError('Required package motor is missing')
     return res
 
 
 async def bulk_mongo_insert(db, collection_name, bulk_list):
+    """
+    Bulk insert into collection
+    :param db: database name
+    :param collection_name:  collection name
+    :param bulk_list: list of documents
+    :return:
+    """
     await db[collection_name].insert_many(bulk_list)

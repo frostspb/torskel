@@ -1,9 +1,15 @@
+"""
+Writing evet logs into base
+"""
 import tornado.log
 from tornado.queues import Queue
 from tornado.options import options
 
 
-class TorskelEventLogController(object):
+class TorskelEventLogController():
+    """
+    Class for write events
+    """
 
     def __init__(self):
         self.logger = tornado.log.gen_log
@@ -33,5 +39,5 @@ class TorskelEventLogController(object):
             step = qsize if qsize <= options.task_list_size else \
                 options.task_list_size
             inserts_list = [await self.queue.get() for _ in range(step)]
-            if len(inserts_list) > 0:
+            if inserts_list:
                 await events_writer_func(db, collection_name, inserts_list)
