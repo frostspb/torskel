@@ -14,21 +14,7 @@ from tornado.httpclient import AsyncHTTPClient
 from tornado.autoreload import watch
 import xmltodict
 
-
-try:
-    from bson import json_util
-except ImportError:
-    json_util = False
-
-try:
-    import aioredis
-except ImportError:
-    aioredis = None
-
-try:
-    import aioodbc
-except ImportError:
-    aioodbc = None
+from torskel.torskel_mixins.redis_mixin import RedisApplicationMixin
 
 try:
     from jinja2 import Environment, FileSystemLoader
@@ -127,7 +113,7 @@ options.define("default_local_language", default='en', type=str)
 options.define("default_international_language", default='en', type=str)
 
 
-class TorskelServer(tornado.web.Application):
+class TorskelServer(tornado.web.Application, RedisApplicationMixin):
     """
     Base class of tornado application. Contains methods for work with redis,
     mongoDB and etc
@@ -151,7 +137,7 @@ class TorskelServer(tornado.web.Application):
                          **settings)
         self.server_name = options.srv_name
         self.logger = tornado.log.gen_log
-        self.redis_connection_pool = None
+
         tornado.ioloop.IOLoop.configure(
             'tornado.platform.asyncio.AsyncIOMainLoop'
         )
@@ -281,10 +267,13 @@ class TorskelServer(tornado.web.Application):
         """
         if options.use_redis:
             # check aioredis lib
-            if aioredis is None:
-                raise ImportError('Required package aioredis is missing')
-            else:
-                self.init_redis_pool(loop)
+            self.log_info("Init Redis connection pool... ")
+            self.log_info(f"ADDR={self.redis_addr} DB={self.redis_db}",
+                          grep_label=INIT_REDIS_LABEL)
+            self.log_info(f"MIN_POOL_SIZE={self.redis_min_con} "
+                          f"MAX_POOL_SIZE={self.redis_max_con}",
+                          grep_label=INIT_REDIS_LABEL)
+            self.init_redis_pool(loop)
         if options.use_events_writer:
             self.log_info('Init events writer')
             event_writer = tornado.ioloop.PeriodicCallback(
@@ -403,95 +392,7 @@ class TorskelServer(tornado.web.Application):
     #  Redis client functions  #
     # ######################## #
 
-    def init_redis_pool(self, loop=None):
-        """
-        Init redis connection pool
-        :param loop: ioloop
 
-        """
-        redis_addr = options.redis_socket if options.use_redis_socket \
-            else (options.redis_host, options.redis_port)
-        # TODO validate redis connection params
-        redis_psw = options.redis_psw
-
-        if redis_psw == "":
-            redis_psw = None
-
-        redis_db = options.redis_db
-        if redis_db == -1:
-            redis_db = None
-        self.log_info("Init Redis connection pool... ")
-        self.log_info(f"ADDR={redis_addr} DB={redis_db}",
-                      grep_label=INIT_REDIS_LABEL)
-        self.log_info(f"MIN_POOL_SIZE={options.redis_min_con} "
-                      f"MAX_POOL_SIZE={options.redis_max_con}",
-                      grep_label=INIT_REDIS_LABEL)
-
-        self.redis_connection_pool = loop.run_until_complete(
-            aioredis.create_pool(redis_addr, password=redis_psw, db=redis_db,
-                                 minsize=options.redis_min_con,
-                                 maxsize=options.redis_max_con)
-        )
-
-    async def set_redis_exp_val(self, key, val, exp=None, **kwargs):
-        """
-        Write value to redis
-        :param key: key
-        :param val: value
-        :param exp: Expire time in seconds
-        :param convert_to_json: bool
-        :param use_json_utils: bool use json utils from bson
-
-        """
-        convert_to_json = kwargs.get('convert_to_json', False)
-        use_json_utils = kwargs.get('use_json_utils', False)
-        if convert_to_json:
-            if use_json_utils and json_util:
-                val = json.dumps(val, default=json_util.default)
-            else:
-                val = json.dumps(val)
-
-        await self.redis_connection_pool.execute('set', key, val)
-        if isinstance(exp, int):
-            await self.redis_connection_pool.execute('expire', key, exp)
-
-    async def del_redis_val(self, key):
-        """
-        delete value from redis by key
-        :param key: key
-
-        """
-
-        await self.redis_connection_pool.execute('del', key)
-
-    async def get_redis_val(self, key, **kwargs):
-        """
-        get value from redis by key
-        :param key: key
-        :param from_json: loads from json
-        :param use_json_utils: bool use json utils from bson
-        :return: value
-        """
-        try:
-            from_json = kwargs.get('from_json', False)
-            use_json_utils = kwargs.get('use_json_utils', False)
-
-            val = await self.redis_connection_pool.execute('get', key)
-            redis_val = val.decode('utf-8') if val is not None else val
-            if redis_val:
-                if use_json_utils and json_util:
-                    res = json.loads(
-                        redis_val, object_hook=json_util.object_hook
-                    ) if from_json else redis_val
-                else:
-                    res = json.loads(redis_val) if from_json else redis_val
-            else:
-                res = None
-            return res
-        except Exception:
-            self.log_exc('get_redis_val failed key = %s' % key)
-            res = None
-            return res
 
     # ################### #
     #  Logging functions  #
