@@ -11,17 +11,9 @@ import tornado.httpclient
 from tornado.options import options
 
 from tornado.httpclient import AsyncHTTPClient
-from tornado.autoreload import watch
 import xmltodict
 
 from torskel.torskel_mixins.redis_mixin import RedisApplicationMixin
-
-try:
-    from jinja2 import Environment, FileSystemLoader
-
-    jinja2_import = True
-except ImportError:
-    jinja2_import = False
 
 try:
     import pycurl
@@ -94,10 +86,6 @@ options.define("redis_socket", default='/var/run/redis/redis.sock', type=str)
 options.define("redis_psw", default='', type=str)
 options.define("redis_db", default=-1, type=int)
 
-# reactjs params
-options.define('use_reactjs', default=False, help='use reactjs', type=bool)
-options.define("react_assets_file", default='webpack-assets.json', type=str)
-
 # events writer params
 options.define('use_events_writer', default=False, help='use_events_writer',
                type=bool)
@@ -144,19 +132,6 @@ class TorskelServer(tornado.web.Application, RedisApplicationMixin):
 
         if options.use_mail_logging:
             self._set_mail_logging()
-
-        if options.use_reactjs:
-            if not jinja2_import:
-                self.react_env = self.react_assets = None
-                raise ImportError('Required package jinja2 is missing')
-            else:
-                self.react_env = Environment(
-                    loader=FileSystemLoader('templates')
-                )
-                self.react_assets = self.load_react_assets()
-
-        else:
-            self.react_env = self.react_assets = None
 
         if options.use_curl_http_client:
             self.log_debug(options.use_curl_http_client,
@@ -234,27 +209,6 @@ class TorskelServer(tornado.web.Application, RedisApplicationMixin):
         """
         return True
 
-    # ######################## #
-    #  ReactJS render support  #
-    # ######################## #
-
-    @staticmethod
-    def load_react_assets():
-        """
-        Loading JavaScript assets
-        :return:
-        """
-        try:
-            file_name = options.react_assets_file
-            with open(file_name) as assets_file:
-                watch(file_name)
-                assets = json.load(assets_file)
-        except IOError:
-            assets = None
-        except KeyError:
-            assets = None
-        return assets
-
     # ################# #
     #  Init with loop   #
     # ################# #
@@ -311,7 +265,7 @@ class TorskelServer(tornado.web.Application, RedisApplicationMixin):
         http request. Method POST
         :param url: url
         :param body: dict with POST-params
-        :param from_json: boolean, convert response to dict
+        param from_json: boolean, convert response to dict
         :return: response
         """
         from_json = kwargs.get('from_json', False)
@@ -355,7 +309,7 @@ class TorskelServer(tornado.web.Application, RedisApplicationMixin):
         """
         http request. Method GET
         :param url: url
-        :param from_json: boolean, convert response to dict
+        param from_json: boolean, convert response to dict
         :return: response
         """
         from_json = kwargs.get('from_json', False)
@@ -387,12 +341,6 @@ class TorskelServer(tornado.web.Application, RedisApplicationMixin):
             res = None
 
         return res
-
-    # ######################## #
-    #  Redis client functions  #
-    # ######################## #
-
-
 
     # ################### #
     #  Logging functions  #

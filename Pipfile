@@ -13,7 +13,6 @@ flake8 = "*"
 tornado = "*"
 xmltodict = "*"
 user-agents = "*"
-"Jinja2" = "*"
 pyjwt = "*"
 python-jwt = "*"
 
