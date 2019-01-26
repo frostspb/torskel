@@ -83,7 +83,7 @@ class TorskelHandler(RequestHandler, TorskelLogMixin):
                 k: ''.join([i.decode('utf-8') for i in v])
                 for k, v in self.request.arguments.items()
             }
-        except Exception:
+        except UnicodeEncodeError:
             self.log_exc('get_req_args_dict failed')
             res = {}
         return res

@@ -20,11 +20,11 @@ TOKEN_KEY = 'token'
 TOKEN_INFO_KEY = 'token_info'
 AUTH_RES_FAIL = {RESULT_KEY: False, MESSAGE_KEY: INVALID_AUTH_HEADER}
 AUTH_RES_GOOD = {RESULT_KEY: True, MESSAGE_KEY: ''}
-
-
+INVALID_TOKEN = {RESULT_KEY: False, MESSAGE_KEY: 'Invalid Token'}
 logger = tornado.log.gen_log  # pylint: disable=C0103
 
 
+# pylint: disable=W0703
 def jwt_decode(token: str, secret_key: str, options: dict = None) -> dict:
     """
     Decode JWT token
@@ -50,12 +50,24 @@ def jwt_decode(token: str, secret_key: str, options: dict = None) -> dict:
 
 def jwt_encode(secret_key, payload: dict = None,
                algoritm: str = DEFAULT_ALGORITM):
+    """
+    encode JWT
+    :param secret_key:
+    :param payload:
+    :param algoritm:
+    :return:
+    """
     res = jwt.encode(payload=payload, key=secret_key, algorithm=algoritm,
                      ).decode("utf-8")
     return res
 
 
 def validate_token(auth_header):
+    """
+    Validate access token
+    :param auth_header:
+    :return:
+    """
     res = AUTH_RES_GOOD
     if auth_header:
         try:
@@ -69,18 +81,26 @@ def validate_token(auth_header):
                 res = AUTH_RES_FAIL
             else:
                 res[TOKEN_KEY] = parts[1]
-        except Exception:
+        except IndexError:
             logger.exception('_validate_token failed')
-            res = {RESULT_KEY: False, MESSAGE_KEY: 'Internal Error'}
+            res = INVALID_TOKEN
+        except KeyError:
+            logger.exception('_validate_token failed')
+            res = INVALID_TOKEN
     else:
         res = AUTH_RES_FAIL
     return res
 
 
+# pylint: disable=W0212
+# pylint: disable=W0703
 def jwtauth(handler_class):
     """
         Class decorator to check for authorization
     """
+
+    # pylint: disable=W0613
+
     def wrap_execute(handler_execute):
         def require_auth(handler, kwargs):
 

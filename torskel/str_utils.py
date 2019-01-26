@@ -9,15 +9,24 @@ import datetime
 ALL_HASH_RE_TMPL = r"^(?:[a-fA-F\d]{32,40})$|^(?:[a-fA-F\d]{52,60})$|" \
                    r"^(?:[a-fA-F\d]{92,100})$"
 
+# pylint: disable=C0103
 hash_sha224_tmpl = re.compile(r"\b([a-f\d]{56}|[A-F\d]{56})\b")
 all_hash_tmpl = re.compile(ALL_HASH_RE_TMPL)
 mac_address = re.compile('^' + r'[\:\-]'.join(['([0-9a-f]{2})'] * 6) + '$')
 
 
 def default_json_dt(json_object):
-    if type(json_object) is datetime.date \
-            or type(json_object) is datetime.datetime:
-        return json_object.isoformat()
+    """
+    Formatting date in JSON
+    :param json_object:
+    :return:
+    """
+    if isinstance(json_object, (datetime.date, datetime.datetime)):
+
+        res = json_object.isoformat()
+    else:
+        res = None
+    return res
 
 
 # pylint: disable=C0103
@@ -46,11 +55,9 @@ def is_valid_mac(mac):
     """
     res = False
     if isinstance(mac, str):
-        if len(mac) > 0:
-            try:
-                res = mac_address.match(mac.lower()) is not None
-            except Exception:
-                res = False
+        if mac:
+            res = mac_address.match(mac.lower()) is not None
+
     return res
 
 
@@ -75,7 +82,7 @@ def valid_conversion(val, type_to_convert):
 
     if isinstance(type_to_convert, type):
         try:
-            val = type_to_convert(val)
+            type_to_convert(val)
             res = True
         except ValueError:
             res = False
@@ -97,7 +104,7 @@ def get_hash_str(value, alg='sha224'):
     try:
         if isinstance(value, str):
             res = getattr(hashlib, alg)(value.encode('utf-8')).hexdigest()
-    except Exception:
+    except UnicodeEncodeError:
         pass
 
     return res
@@ -111,11 +118,9 @@ def is_hash_str(value):
     """
     res = False
     if isinstance(value, str):
-        if len(value) > 0:
-            try:
-                res = all_hash_tmpl.match(value) is not None
-            except Exception:
-                res = False
+        if value:
+            res = all_hash_tmpl.match(value) is not None
+
     return res
 
 

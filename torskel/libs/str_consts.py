@@ -1,3 +1,7 @@
+"""
+Module contains constants
+"""
+
 INIT_REDIS_LABEL = 'INIT_REDIS'
 INIT_MONGO_LABEL = 'INIT_MONGO'
 

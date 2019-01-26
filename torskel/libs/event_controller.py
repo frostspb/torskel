@@ -6,7 +6,7 @@ from tornado.queues import Queue
 from tornado.options import options
 
 
-class TorskelEventLogController():
+class TorskelEventLogController:
     """
     Class for write events
     """
@@ -25,6 +25,7 @@ class TorskelEventLogController():
             self.logger.debug(event)
             self.queue.put(event)
 
+    # pylint: disable=C0103
     async def write_log_from_queue(self, db, collection_name,
                                    events_writer_func) -> type(None):
         """
@@ -34,7 +35,7 @@ class TorskelEventLogController():
 
         qsize = self.queue.qsize()
         if options.show_log_event_writer:
-            self.logger.info(f'Writing events... queue size = {qsize}')
+            self.logger.info('Writing events... queue size = %s', qsize)
         if qsize > 0:
             step = qsize if qsize <= options.task_list_size else \
                 options.task_list_size

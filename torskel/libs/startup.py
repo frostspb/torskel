@@ -1,10 +1,17 @@
+"""
+Module contains startup methods
+"""
+# pylint: disable=C0103
+
 from tornado.options import options
+from tornado.httpserver import HTTPServer
+
+# hotfix for windows
 try:
     from tornado.netutil import bind_unix_socket
     no_unix_socket = False
 except ImportError:
     no_unix_socket = True
-from tornado.httpserver import HTTPServer
 
 
 def server_init(server):
