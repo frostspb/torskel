@@ -244,7 +244,8 @@ class TorskelServer(Application, RedisApplicationMixin, TorskelLogMixin):
         res = None
         if options.use_xmlrpc:
             try:
-                tornado_xmlrpc = importlib.import_module('tornado_xmlrpc')
+                tornado_xmlrpc = importlib.import_module(
+                    'tornado_xmlrpc.client')
                 res = tornado_xmlrpc.client.ServerProxy(
                     xmlrpc_server,
                     AsyncHTTPClient(max_clients=max_connections)
