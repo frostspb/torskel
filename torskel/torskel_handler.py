@@ -252,7 +252,27 @@ class TorskelHandler(RequestHandler, TorskelLogMixin):
     def default_json_dt(json_object):
         """
         Returns hook for formatting date in JSON
-        :param o:
+        :param o: json_object
         :return:
         """
         return default_json_dt(json_object)
+
+    @staticmethod
+    def get_result_dict(code=0, msg='', additional_dict=None, **kwargs):
+        """
+        Return result dict like {'resultCode': 0, 'resultMessage': 'OK"}
+        :param code: code of result
+        :param msg: message of result
+        :param additional_dict: additional data if needed
+        :param kwargs:
+            result_code_key overrides value of resultCode key
+            res_msg_key overrides value of resultMessage key
+        :return: dict
+        """
+        if additional_dict is None:
+            additional_dict = {}
+        res_code_key = kwargs.get('result_code_key', 'resultCode')
+        res_msg_key = kwargs.get('res_msg_key', 'resultMessage')
+        res = {res_code_key: code, res_msg_key: msg}
+        res.update(additional_dict)
+        return res
