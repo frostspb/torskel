@@ -3,7 +3,7 @@ Module with RequestHandler
 """
 
 # pylint: disable=W0511
-
+import json
 from datetime import datetime
 from user_agents import parse
 
@@ -267,6 +267,7 @@ class TorskelHandler(RequestHandler, TorskelLogMixin):
         :param kwargs:
             result_code_key overrides value of resultCode key
             res_msg_key overrides value of resultMessage key
+            to_json  convert dict to json
         :return: dict
         """
         if additional_dict is None:
@@ -275,4 +276,6 @@ class TorskelHandler(RequestHandler, TorskelLogMixin):
         res_msg_key = kwargs.get('res_msg_key', 'resultMessage')
         res = {res_code_key: code, res_msg_key: msg}
         res.update(additional_dict)
+        if kwargs.get('to_json', False):
+            res = json.dumps(res)
         return res
