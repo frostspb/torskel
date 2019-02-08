@@ -5,6 +5,9 @@ Module with RequestHandler
 # pylint: disable=W0511
 import json
 from datetime import datetime
+
+import xmltodict
+
 from user_agents import parse
 
 from tornado.options import options
@@ -279,3 +282,23 @@ class TorskelHandler(RequestHandler, TorskelLogMixin):
         if kwargs.get('to_json', False):
             res = json.dumps(res)
         return res
+
+    @staticmethod
+    def get_result_xml(code=0, msg='', additional_dict=None, **kwargs):
+        """
+        Return xml like
+        <root>
+            <resultCode>-1</resultCode>
+            <resultMessage>Invalid params</resultMessage>
+        </root>
+        :param code: code of result
+        :param msg: message of result
+        :param additional_dict: additional data if needed
+        :param kwargs: root_key overrides name of root node
+        :return: xml
+        """
+        root_key = kwargs.get('root_key', 'Result')
+        res_dict = TorskelHandler.get_result_dict(code, msg, additional_dict)
+        output_dict = {root_key: res_dict}
+        result = xmltodict.unparse(output_dict)
+        return result
