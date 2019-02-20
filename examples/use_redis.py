@@ -44,7 +44,7 @@ class RedisHandler(TorskelHandler):
 redis_app = RedisApplication(handlers=[(r"/", RedisHandler)])
 
 if __name__ == '__main__':
-    redis_app.listen(8888)
+    redis_app.init_srv()
     loop = asyncio.get_event_loop()
     redis_app.init_with_loop(loop)
     loop.run_forever()

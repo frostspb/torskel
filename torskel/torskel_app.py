@@ -90,6 +90,12 @@ options.define("events_collection_name", default='user_events', type=str)
 options.define("default_local_language", default='en', type=str)
 options.define("default_international_language", default='en', type=str)
 
+# graylog options
+
+options.define('use_graylog', default=False, help='use graylog', type=bool)
+options.define("graylog_host", default='127.0.0.1', type=str)
+options.define("graylog_port", default=12201, type=int)
+
 
 class TorskelServer(Application, RedisApplicationMixin, TorskelLogMixin):
     """
