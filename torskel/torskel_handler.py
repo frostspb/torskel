@@ -21,6 +21,8 @@ from torskel.libs.str_consts import EVENTS_IP, EVENTS_METHOD
 from torskel.libs.str_consts import EVENTS_URL, EVENTS_SRV_NAME
 from torskel.str_utils import default_json_dt
 from torskel.libs.auth.jwt import jwt_encode
+from torskel.libs.auth.jwt import jwt_decode
+
 
 
 # pylint: disable=W0223
@@ -64,6 +66,18 @@ class TorskelHandler(RequestHandler, TorskelLogMixin):
         if payload is None:
             payload = {}
         return jwt_encode(self.application.get_secret_key(), payload)
+
+    def decode_jwt_token(self, token, decode_options: dict = None):
+        """
+        Decode payload from JWT token
+        :param token: token
+        :param decode_options: options
+        :return:
+        """
+        res = jwt_decode(
+            token, self.application.get_secret_key(), decode_options
+        )
+        return res
 
     def get_req_args(self, args_list=None):
         """
