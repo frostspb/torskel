@@ -69,8 +69,4 @@ class EventServer(TorskelServer):
 
 if __name__ == "__main__":
     my_server = EventServer(handlers, **settings)
-    my_server.listen(8889)
-    loop = asyncio.get_event_loop()
-    my_server.init_with_loop(loop)
-    loop.run_forever()
-    tornado.ioloop.IOLoop.current().start()
+    my_server.init_srv()

@@ -45,7 +45,3 @@ redis_app = RedisApplication(handlers=[(r"/", RedisHandler)])
 
 if __name__ == '__main__':
     redis_app.init_srv()
-    loop = asyncio.get_event_loop()
-    redis_app.init_with_loop(loop)
-    loop.run_forever()
-    tornado.ioloop.IOLoop.current().start()

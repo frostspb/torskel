@@ -48,4 +48,3 @@ hello_app = TorskelServer(handlers=[(r"/login", HelloJwtLoginHandler),
 
 if __name__ == '__main__':
     hello_app.init_srv()
-    tornado.ioloop.IOLoop.current().start()
