@@ -3,7 +3,9 @@ Module contains startup methods
 """
 # pylint: disable=C0103
 import logging
+import platform
 import importlib
+import tornado
 from tornado.options import options
 from tornado.httpserver import HTTPServer
 import tornado.log
@@ -46,6 +48,9 @@ def server_init(server):
     :param server:
     :return: None
     """
+    server.log_info('using Tornado v%s' % tornado.version)
+    server.log_info('using Python v%s' % platform.python_version())
+    server.log_info('%s %s ' % (platform.system(), platform.release()))
     if options.use_graylog:
         _configure_graylog()
 
