@@ -2,6 +2,7 @@
 Module contains class for work with Redis
 """
 import json
+import asyncio
 import importlib
 
 import tornado.web
@@ -82,20 +83,22 @@ class RedisApplicationMixin():
             json_util = False
         return json_util
 
-    def init_redis_pool(self, loop=None):
+    def init_redis_pool(self):
         """
         Init redis connection pool
-        :param loop: ioloop
-
         """
         try:
             aioredis = importlib.import_module('aioredis')
-            self.redis_connection_pool = loop.run_until_complete(
-                aioredis.create_pool(self.redis_addr, password=self.redis_psw,
-                                     db=self.redis_db,
-                                     minsize=self.redis_min_con,
-                                     maxsize=self.redis_max_con)
-            )
+            self.redis_connection_pool \
+                = asyncio.get_event_loop().run_until_complete(
+                    aioredis.create_pool(
+                        self.redis_addr,
+                        password=self.redis_psw,
+                        db=self.redis_db,
+                        minsize=self.redis_min_con,
+                        maxsize=self.redis_max_con
+                    )
+                )
         except ImportError:
             raise ImportError('Required package aioredis is missing')
 

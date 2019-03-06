@@ -172,6 +172,8 @@ class TorskelServer(Application, RedisApplicationMixin, TorskelLogMixin):
         :return: None
         """
         server_init(self)
+        self.init_with_loop()
+        tornado.ioloop.IOLoop.current().start()
 
     @staticmethod
     def get_secret_key() -> str:
@@ -212,7 +214,7 @@ class TorskelServer(Application, RedisApplicationMixin, TorskelLogMixin):
     #  Init with loop   #
     # ################# #
 
-    def init_with_loop(self, loop=None):
+    def init_with_loop(self):
         """
         Initialization with loop
         :param loop:
@@ -226,7 +228,7 @@ class TorskelServer(Application, RedisApplicationMixin, TorskelLogMixin):
             self.log_info(f"MIN_POOL_SIZE={self.redis_min_con} "
                           f"MAX_POOL_SIZE={self.redis_max_con}",
                           grep_label=INIT_REDIS_LABEL)
-            self.init_redis_pool(loop)
+            self.init_redis_pool()
         if options.use_events_writer:
             self.log_info('Init events writer')
             event_writer = tornado.ioloop.PeriodicCallback(
