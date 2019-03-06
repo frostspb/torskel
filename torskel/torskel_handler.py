@@ -57,6 +57,22 @@ class TorskelHandler(RequestHandler, TorskelLogMixin):
         """
         return is_hash_str(value)
 
+    def get_auth_token(self):
+        """
+        Parse auth token from header
+        :return:
+        """
+        token = None
+        auth = self.request.headers.get('Authorization')
+        if auth:
+            try:
+                token = auth.split()[1]
+            except IndexError:
+                token = None
+            except ValueError:
+                token = None
+        return token
+
     def encode_jwt_token(self, payload: dict = None):
         """
         Encode JWT token from payload
