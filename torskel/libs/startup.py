@@ -49,12 +49,12 @@ def server_init(server):
     :param server:
     :return: None
     """
-    server.log_info('======== Environment info ======== ')
-    server.log_info('   Python v%s' % platform.python_version())
-    server.log_info('   Tornado v%s' % tornado.version)
-    server.log_info('   Torskel v%s' % torskel.version)
-    server.log_info('   %s %s ' % (platform.system(), platform.release()))
-    server.log_info('================================== ')
+    logger.info('======== Environment info ======== ')
+    logger.info('   Python v%s', platform.python_version())
+    logger.info('   Tornado v%s', tornado.version)
+    logger.info('   Torskel v%s', torskel.version)
+    logger.info('   %s %s ', platform.system(), platform.release())
+    logger.info('================================== ')
 
     if options.use_graylog:
         _configure_graylog()
@@ -64,8 +64,8 @@ def server_init(server):
         unix_socket = bind_unix_socket(options.socket_path, 0o666)
         http_server = HTTPServer(server)
         http_server.add_socket(unix_socket)
-        server.log_info(f'Running on socket {options.socket_path}')
+        logger.info('Running on socket', options.socket_path)
     else:
 
-        server.log_info(f'Running on port {options.port}')
+        logger.info('Running on port', options.port)
         server.listen(options.port)
