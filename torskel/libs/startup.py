@@ -53,7 +53,9 @@ def server_init(server):
     server.log_info('   Python v%s' % platform.python_version())
     server.log_info('   Tornado v%s' % tornado.version)
     server.log_info('   Torskel v%s' % torskel.version)
-    server.log_info('%s %s ' % (platform.system(), platform.release()))
+    server.log_info('   %s %s ' % (platform.system(), platform.release()))
+    server.log_info('================================== ')
+
     if options.use_graylog:
         _configure_graylog()
 
