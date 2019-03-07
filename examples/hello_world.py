@@ -1,4 +1,3 @@
-import tornado.web
 from torskel.torskel_app import TorskelServer
 from torskel.torskel_handler import TorskelHandler
 

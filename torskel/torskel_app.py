@@ -278,6 +278,11 @@ class TorskelServer(Application, RedisApplicationMixin, TorskelLogMixin):
         from_xml = kwargs.get('from_xml', False)
         log_timeout_exc = kwargs.get('log_timeout_exc', True)
         none_if_err = kwargs.get('none_if_err', True)
+        # clear torskel params from kwargs
+        kwargs.pop('from_json', False)
+        kwargs.pop('from_xml', False)
+        kwargs.pop('log_timeout_exc', False)
+        kwargs.pop('none_if_err', False)
         self.log_debug(log_timeout_exc, grep_label='log_timeout_exc')
         res = None
         try:
@@ -286,7 +291,7 @@ class TorskelServer(Application, RedisApplicationMixin, TorskelLogMixin):
 
             res_fetch = await self.http_client.fetch(url, method='POST',
                                                      body=param_s,
-                                                     headers=headers)
+                                                     headers=headers, **kwargs)
 
             res_s = res_fetch.body.decode(encoding="utf-8") \
                 if res_fetch is not None else res_fetch
@@ -320,10 +325,17 @@ class TorskelServer(Application, RedisApplicationMixin, TorskelLogMixin):
         from_xml = kwargs.get('from_xml', False)
         log_timeout_exc = kwargs.get('log_timeout_exc', True)
         none_if_err = kwargs.get('none_if_err', True)
+
+        # clear torskels params
+        kwargs.pop('from_json', False)
+        kwargs.pop('from_xml', False)
+        kwargs.pop('log_timeout_exc', False)
+        kwargs.pop('none_if_err', False)
+
         self.log_debug(log_timeout_exc, grep_label='log_timeout_exc')
         res = None
         try:
-            res_fetch = await self.http_client.fetch(url)
+            res_fetch = await self.http_client.fetch(url, **kwargs)
             res_s = res_fetch.body.decode(encoding="utf-8") \
                 if res_fetch is not None else res_fetch
 

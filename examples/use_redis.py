@@ -1,7 +1,5 @@
-import asyncio
 from torskel.torskel_app import TorskelServer
 from torskel.torskel_handler import TorskelHandler
-import tornado.web
 
 from tornado.options import options
 

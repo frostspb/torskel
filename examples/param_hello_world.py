@@ -1,6 +1,5 @@
 from torskel.torskel_app import TorskelServer
 from torskel.torskel_handler import TorskelHandler
-import tornado.web
 
 
 class HelloApplication(TorskelServer):

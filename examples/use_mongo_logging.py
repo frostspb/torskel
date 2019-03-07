@@ -2,12 +2,9 @@
 For use it example you must 'pip install motor'
 """
 
-import asyncio
-import tornado.ioloop
-
-from torskel.torskel_app import TorskelServer
 from tornado.web import url
 from tornado.options import options
+from torskel.torskel_app import TorskelServer
 from torskel.torskel_handler import TorskelHandler
 
 
