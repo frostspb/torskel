@@ -60,7 +60,6 @@ def server_init(server):
     logger.info('   %s %s ', platform.system(), platform.release())
     logger.info('================================== ')
 
-
     if options.use_graylog:
         _configure_graylog()
 
