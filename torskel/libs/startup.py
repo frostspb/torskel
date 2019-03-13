@@ -23,7 +23,6 @@ logger = tornado.log.gen_log
 # hotfix for windows
 
 
-
 def _configure_graylog():
     """
     Configuring graylog's handlers
