@@ -6,20 +6,22 @@ import logging
 import platform
 import importlib
 import tornado
+import tornado.log
+try:
+    from tornado.netutil import bind_unix_socket
+    no_unix_socket = False
+except ImportError:
+    no_unix_socket = True
 from tornado.options import options
 from tornado.httpserver import HTTPServer
-import tornado.log
+
 import torskel
 
 
 # pylint: disable=C0103
 logger = tornado.log.gen_log
 # hotfix for windows
-try:
-    from tornado.netutil import bind_unix_socket
-    no_unix_socket = False
-except ImportError:
-    no_unix_socket = True
+
 
 
 def _configure_graylog():
@@ -58,6 +60,7 @@ def server_init(server):
     logger.info('   Torskel v%s', torskel.version)
     logger.info('   %s %s ', platform.system(), platform.release())
     logger.info('================================== ')
+
 
     if options.use_graylog:
         _configure_graylog()

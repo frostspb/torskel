@@ -24,7 +24,6 @@ from torskel.libs.auth.jwt import jwt_encode
 from torskel.libs.auth.jwt import jwt_decode
 
 
-
 # pylint: disable=W0223
 class TorskelHandler(RequestHandler, TorskelLogMixin):
     """
@@ -235,7 +234,7 @@ class TorskelHandler(RequestHandler, TorskelLogMixin):
         if event is None:
             event = {}
         if use_legacy_event:
-            legacy_event = self.get_event_skeleton(options.use_lite_event)
+            legacy_event = self._get_event_skeleton(options.use_lite_event)
         else:
             legacy_event = {}
 
@@ -248,7 +247,7 @@ class TorskelHandler(RequestHandler, TorskelLogMixin):
         if compl_event:
             self.application.event_writer.add_log_event(compl_event)
 
-    def get_event_skeleton(self, lite_event=False):
+    def _get_event_skeleton(self, lite_event=False):
         """
         Returns skeleton of event for logging
         :param lite_event: flag for using lite event dict

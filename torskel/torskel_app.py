@@ -21,6 +21,7 @@ from torskel.torskel_mixins.log_mix import TorskelLogMixin
 from torskel.libs.db_utils.mongo import get_mongo_pool
 from torskel.libs.db_utils.mongo import bulk_mongo_insert
 from torskel.libs.str_consts import INIT_REDIS_LABEL
+from torskel.libs.str_consts import DEFAULT_SERVER_VERSION
 from torskel.libs.event_controller import TorskelEventLogController
 from torskel.libs.startup import server_init
 
@@ -103,7 +104,7 @@ class TorskelServer(Application, RedisApplicationMixin, TorskelLogMixin):
     mongoDB and etc
     """
     def __init__(self, handlers, root_dir=None, static_path=None,
-                 template_path=None, version='1.0', **settings):
+                 template_path=None, **settings):
         self.log_msg_tmpl = '%s %s'
 
         # TODO add valiate paths
@@ -121,7 +122,7 @@ class TorskelServer(Application, RedisApplicationMixin, TorskelLogMixin):
                          template_path=app_template_dir,
                          **settings)
         self.server_name = options.srv_name
-        self.server_version = version
+        self.server_version = settings.get('version', DEFAULT_SERVER_VERSION)
         self.logger = tornado.log.gen_log
 
         tornado.ioloop.IOLoop.configure(
