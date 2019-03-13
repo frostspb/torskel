@@ -103,7 +103,7 @@ class TorskelServer(Application, RedisApplicationMixin, TorskelLogMixin):
     mongoDB and etc
     """
     def __init__(self, handlers, root_dir=None, static_path=None,
-                 template_path=None, **settings):
+                 template_path=None, version='1.0', **settings):
         self.log_msg_tmpl = '%s %s'
 
         # TODO add valiate paths
@@ -121,6 +121,7 @@ class TorskelServer(Application, RedisApplicationMixin, TorskelLogMixin):
                          template_path=app_template_dir,
                          **settings)
         self.server_name = options.srv_name
+        self.server_version = version
         self.logger = tornado.log.gen_log
 
         tornado.ioloop.IOLoop.configure(

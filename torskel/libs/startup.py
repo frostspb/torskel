@@ -49,6 +49,8 @@ def server_init(server):
     :param server:
     :return: None
     """
+    logger.info('Starting %s v%s', server.server_name, server.server_version)
+    logger.info('')
     logger.info('======== Environment info ======== ')
     logger.info('   Python v%s', platform.python_version())
     logger.info('   Tornado v%s', tornado.version)
@@ -64,8 +66,8 @@ def server_init(server):
         unix_socket = bind_unix_socket(options.socket_path, 0o666)
         http_server = HTTPServer(server)
         http_server.add_socket(unix_socket)
-        logger.info('Running on socket', options.socket_path)
+        logger.info('Running on socket %s', options.socket_path)
     else:
 
-        logger.info('Running on port', options.port)
+        logger.info('Running on port %s', options.port)
         server.listen(options.port)
