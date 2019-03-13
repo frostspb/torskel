@@ -49,6 +49,7 @@ def server_init(server):
     :param server:
     :return: None
     """
+    logger.info('')
     logger.info('Starting %s v%s', server.server_name, server.server_version)
     logger.info('')
     logger.info('======== Environment info ======== ')
