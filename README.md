@@ -5,6 +5,7 @@
 [![Downloads](https://pepy.tech/badge/torskel)](https://pepy.tech/project/torskel)
 [![star this repo](http://githubbadges.com/star.svg?user=frostspb&repo=torskel&style=flat)](https://github.com/frostspb/torskel)
 [![fork this repo](http://githubbadges.com/fork.svg?user=frostspb&repo=torskel&style=flat)](https://github.com/frostspb/torskel/fork)
+
 **Python package with skeleton of the base Tornado application.**
 
 Contains basic functions for logging, asynchronous redis, asynchronous http request
