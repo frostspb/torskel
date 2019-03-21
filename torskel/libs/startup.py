@@ -32,11 +32,18 @@ def _configure_graylog():
                 options.graylog_port)
     try:
         graypy = importlib.import_module('graypy')
-        handler = graypy.GELFHandler(
-            options.graylog_host,
-            options.graylog_port,
-            localname=options.srv_name
-        )
+        if graypy.__version__[0] < 1:
+            handler = graypy.GELFHandler(
+                options.graylog_host,
+                options.graylog_port,
+                localname=options.srv_name
+            )
+        else:
+            handler = graypy.GELFUDPHandler(
+                options.graylog_host,
+                options.graylog_port,
+                localname=options.srv_name
+            )
         logging.getLogger("tornado.access").addHandler(handler)
         logging.getLogger("tornado.application").addHandler(handler)
         logging.getLogger("tornado.general").addHandler(handler)
