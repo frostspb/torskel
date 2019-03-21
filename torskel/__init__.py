@@ -1,2 +1,2 @@
 # pylint: skip-file
-version = '0.6.9'
+version = '0.6.11'

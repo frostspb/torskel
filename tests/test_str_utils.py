@@ -18,7 +18,9 @@ class TestStrUtils(unittest.TestCase):
         self.hash_sha224_tmpl = re.compile(SHA224_TMPL)
         self.all_hash_tmpl = re.compile(ALL_HASH_TMPL)
         self.test_str = 'test me'
-        self.test_hash_res = hashlib.sha224(self.test_str.encode('utf-8')).hexdigest()
+        self.test_hash_res = hashlib.sha224(
+            self.test_str.encode('utf-8')
+        ).hexdigest()
         self.test_hash = TEST_HASH
 
     def test_get_hash_str_tmpl(self):

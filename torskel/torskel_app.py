@@ -16,6 +16,7 @@ from tornado.web import Application
 from tornado.httpclient import AsyncHTTPClient
 import xmltodict
 
+from torskel.torskel_ping_handler import TorskelPingHandler
 from torskel.torskel_mixins.redis_mixin import RedisApplicationMixin
 from torskel.torskel_mixins.log_mix import TorskelLogMixin
 from torskel.libs.db_utils.mongo import get_mongo_pool
@@ -38,6 +39,10 @@ options.define(
     'use_xmlrpc', default=False, help='use xmlrpc client', type=bool
 )
 options.define("max_xmlrpc_clients", default=10, type=int)
+
+# autocreating ping handler
+options.define("create_ping_handler", default=False, type=bool)
+options.define("ping_handler_url", default='/service/ping', type=str)
 
 # http-client params
 options.define("max_http_clients", default=100, type=int)
@@ -148,6 +153,15 @@ class TorskelServer(Application, RedisApplicationMixin, TorskelLogMixin):
             max_clients=options.max_http_clients
         ) if create_http_client else None
 
+        self._configure_mongo()
+        self.event_writer = TorskelEventLogController()
+        self._configure_ping_handler()
+
+    def _configure_mongo(self):
+        """
+        Configuration mongodb connection
+        :return:
+        """
         if options.use_mongo:
             try:
                 self.mongo_pool = get_mongo_pool(
@@ -165,7 +179,17 @@ class TorskelServer(Application, RedisApplicationMixin, TorskelLogMixin):
                 raise
         else:
             self.mongo_pool = None
-        self.event_writer = TorskelEventLogController()
+
+    def _configure_ping_handler(self):
+        """
+        Configuration ping handler
+        :return:
+        """
+        if options.create_ping_handler:
+            self.add_handlers(
+                ".*",
+                [(options.ping_handler_url, TorskelPingHandler)]
+            )
 
     def init_srv(self):
         """
