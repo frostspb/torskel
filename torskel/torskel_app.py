@@ -33,6 +33,8 @@ options.define("srv_name", 'LOCAL', help="Server verbose name", type=str)
 options.define("run_on_socket", False, help="Run on socket", type=bool)
 options.define("socket_path", None, help="Path to unix-socket", type=str)
 
+# using uvloop
+options.define("use_uvloop", False, help="Use uvloop", type=bool)
 
 # xml-rpc
 options.define(
@@ -156,6 +158,21 @@ class TorskelServer(Application, RedisApplicationMixin, TorskelLogMixin):
         self._configure_mongo()
         self.event_writer = TorskelEventLogController()
         self._configure_ping_handler()
+        self.log_info('Configuring loop')
+        self._configure_loop()
+
+    @staticmethod
+    def _configure_loop():
+        """
+        Configuration loop
+        :return:
+        """
+        if options.use_uvloop:
+            try:
+                uvloop = importlib.import_module('uvloop')
+                uvloop.install()
+            except ImportError:
+                raise ImportError('Required package uvloop is missing')
 
     def _configure_mongo(self):
         """
@@ -186,6 +203,8 @@ class TorskelServer(Application, RedisApplicationMixin, TorskelLogMixin):
         :return:
         """
         if options.create_ping_handler:
+            self.log_info('Creating ping handler')
+
             self.add_handlers(
                 ".*",
                 [(options.ping_handler_url, TorskelPingHandler)]
