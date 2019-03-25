@@ -43,8 +43,12 @@ class HelloJwtSecuredHandler(TorskelSecuredHandler):
         self.write('Hello, auth success')
 
 
-hello_app = TorskelServer(handlers=[(r"/login", HelloJwtLoginHandler),
-                                    (r"/secured", HelloJwtSecuredHandler)])
+hello_app = TorskelServer(
+    handlers=[
+        (r"/login", HelloJwtLoginHandler),
+        (r"/secured", HelloJwtSecuredHandler)
+    ]
+)
 
 if __name__ == '__main__':
     hello_app.init_srv()
