@@ -12,6 +12,10 @@ class TorskelPingHandler(TorskelHandler):
     """
 
     async def get_ok_status(self):
+        """
+        Return OK
+        :return:
+        """
         self.write(self.get_result_dict(code=0, message='Service is up'))
         self.finish()
 

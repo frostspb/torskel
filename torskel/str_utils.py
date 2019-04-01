@@ -5,6 +5,8 @@ import hashlib
 import re
 import ipaddress
 import datetime
+import json
+import xmltodict
 
 ALL_HASH_RE_TMPL = r"^(?:[a-fA-F\d]{32,40})$|^(?:[a-fA-F\d]{52,60})$|" \
                    r"^(?:[a-fA-F\d]{92,100})$"
@@ -136,3 +138,13 @@ def is_number(value):
         return False
 
     return True
+
+
+def xml_str_to_dict(xml_str: str) -> dict:
+    """
+    create dict from xml
+    :param xml_str:
+    :return:
+    """
+    parsed_xml = xmltodict.parse(xml_str)
+    return json.loads(json.dumps(parsed_xml))
