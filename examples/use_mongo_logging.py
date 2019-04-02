@@ -4,8 +4,8 @@ For use it example you must 'pip install motor'
 
 from tornado.web import url
 from tornado.options import options
-from torskel.torskel_app import TorskelServer
-from torskel.torskel_handler import TorskelHandler
+from torskel import TorskelServer
+from torskel import TorskelHandler
 
 
 settings = {

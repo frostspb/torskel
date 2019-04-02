@@ -1,4 +1,4 @@
-from torskel.torskel_handler import TorskelHandler
+from torskel import TorskelHandler
 
 
 class TestPage(TorskelHandler):

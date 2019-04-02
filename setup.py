@@ -20,9 +20,9 @@ setup(
         "Programming Language :: Python :: 3.7",
     ],
     install_requires=[
-        'xmltodict>=0.11.0',
+        'xmltodict>=0.12.0',
         'user-agents>=1.1.0',
-        'tornado>=5.1',
+        'tornado>=6.0.2',
         'pyjwt>=1.7.1',
         'python-jwt>=3.2.4',
     ],

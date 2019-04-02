@@ -1,5 +1,5 @@
-from torskel.torskel_app import TorskelServer
-from torskel.torskel_handler import TorskelHandler
+from torskel import TorskelServer
+from torskel import TorskelHandler
 
 
 class HelloHandler(TorskelHandler):

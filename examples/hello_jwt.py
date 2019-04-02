@@ -2,9 +2,9 @@ import datetime
 import tornado.web
 
 from tornado.options import options
-from torskel.torskel_app import TorskelServer
-from torskel.torskel_handler import TorskelHandler
-from torskel.torskel_secured_handler import TorskelSecuredHandler
+from torskel import TorskelServer
+from torskel import TorskelHandler
+from torskel import TorskelSecuredHandler
 
 options.define("secret_key", "#MY_SeCrEt_KEy",
                type=str)

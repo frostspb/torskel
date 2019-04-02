@@ -3,7 +3,7 @@ import sys
 
 from tornado.options import options
 from tornado.testing import AsyncHTTPTestCase
-from torskel.torskel_app import TorskelServer
+from torskel import TorskelServer
 from tests.app_handlers import TestPage
 
 APP_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
