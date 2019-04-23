@@ -11,5 +11,5 @@ EVENTS_IP = 'user_ip'
 EVENTS_URL = 'handler_url'
 EVENTS_SRV_NAME = 'server_name'
 EVENTS_METHOD = 'method'
-
+EVENTS_HTTP_HEADERS = 'headers'
 DEFAULT_SERVER_VERSION = '1.0'

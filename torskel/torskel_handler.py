@@ -17,8 +17,11 @@ from torskel.str_utils import is_hash_str
 from torskel.torskel_mixins.log_mix import TorskelLogMixin
 from torskel.libs.str_consts import EVENTS_USER_AGENT
 from torskel.libs.str_consts import EVENTS_DATE
-from torskel.libs.str_consts import EVENTS_IP, EVENTS_METHOD
-from torskel.libs.str_consts import EVENTS_URL, EVENTS_SRV_NAME
+from torskel.libs.str_consts import EVENTS_IP
+from torskel.libs.str_consts import EVENTS_METHOD
+from torskel.libs.str_consts import EVENTS_URL
+from torskel.libs.str_consts import EVENTS_SRV_NAME
+from torskel.libs.str_consts import EVENTS_HTTP_HEADERS
 from torskel.str_utils import default_json_dt
 from torskel.libs.auth.jwt import jwt_encode
 from torskel.libs.auth.jwt import jwt_decode
@@ -267,6 +270,7 @@ class TorskelHandler(RequestHandler, TorskelLogMixin):
             EVENTS_DATE: datetime.now(),
             EVENTS_USER_AGENT: user_agent,
             EVENTS_IP: ip,
+            EVENTS_HTTP_HEADERS: self.request.headers
         }
 
         if not lite_event:
