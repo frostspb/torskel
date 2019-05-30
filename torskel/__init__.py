@@ -8,7 +8,7 @@ from torskel.torskel_app import TorskelServer
 from torskel.libs import auth
 from torskel.libs.event_controller import TorskelEventLogController
 
-version = '0.7.3'
+version = '0.7.4'
 
 __all__ = [
     'str_utils',

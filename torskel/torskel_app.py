@@ -287,21 +287,26 @@ class TorskelServer(Application, RedisApplicationMixin, TorskelLogMixin):
     # ############################# #
     @staticmethod
     def get_xmlrpc_server(xmlrpc_server,
-                          max_connections=options.max_xmlrpc_clients):
+                          max_connections=options.max_xmlrpc_clients,
+                          http_params=None):
         """
         return connection to xmlrpc server
+        :param http_params: params of http request
         :param xmlrpc_server: server url
         :param max_connections: count of max connections
         :return: connection
         """
         res = None
+        if http_params is None:
+            http_params = {}
         if options.use_xmlrpc:
             try:
                 tornado_xmlrpc = importlib.import_module(
                     'tornado_xmlrpc.client')
                 res = tornado_xmlrpc.ServerProxy(
                     xmlrpc_server,
-                    AsyncHTTPClient(max_clients=max_connections)
+                    AsyncHTTPClient(max_clients=max_connections),
+                    http_params=http_params
                 )
             except ImportError:
                 raise ImportError(
